@@ -207,3 +207,85 @@ details.panel > div { padding:6px 14px 14px; }
 .aktivitaet { width:100%; max-width:460px; color:var(--mut); }
 .herleitung { border-left:2px solid var(--accent); padding-left:6px; margin-top:3px; }
 .kontextkompakt label { min-width:96px; }
+
+/* ============ v3: Visuelle Reise & Animationen ============ */
+@keyframes vx-sweep-k { 0%{transform:translateX(-40px)} 100%{transform:translateX(140px)} }
+.vx-sweep { animation: vx-sweep-k 2.6s cubic-bezier(.45,0,.55,1) infinite; }
+.vx-sweep.slow { animation-duration: 4.2s; }
+@keyframes vx-pulse-k { 0%,100%{opacity:.25} 50%{opacity:1} }
+.vx-pulse { animation: vx-pulse-k 1.6s ease-in-out infinite; }
+@keyframes vx-tw-k { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(7deg)} }
+.vx-tw { transform-origin: bottom center; animation: vx-tw-k 1.8s ease-in-out infinite; }
+@keyframes vx-tandem-k { 0%{transform:translateX(-26px)} 50%{transform:translateX(26px)} 100%{transform:translateX(-26px)} }
+.vx-tandem { animation: vx-tandem-k 5s ease-in-out infinite; }
+@keyframes vx-walk-k { 0%{transform:translateX(-18px)} 50%{transform:translateX(18px)} 100%{transform:translateX(-18px)} }
+.vx-walk { animation: vx-walk-k 4s ease-in-out infinite; }
+.vx-walk2 { animation: vx-walk-k 4s ease-in-out infinite reverse; }
+@keyframes vx-float-k { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(7px) rotate(6deg)} }
+.vx-float { animation: vx-float-k 3.4s ease-in-out infinite; }
+@keyframes vx-sun-k { 0%,100%{transform:scale(1);opacity:.85} 50%{transform:scale(1.18);opacity:1} }
+.vx-sun { transform-origin: center; animation: vx-sun-k 2.8s ease-in-out infinite; }
+@keyframes vx-draw-k { from{stroke-dashoffset:220;opacity:.2} to{stroke-dashoffset:0;opacity:1} }
+.vx-draw { stroke-dasharray:220; animation: vx-draw-k 1.4s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes vx-dash-k { to { stroke-dashoffset: -40; } }
+.vx-dash { stroke-dasharray: 6 6; animation: vx-dash-k 1.2s linear infinite; }
+@keyframes vx-count-k { 0%{opacity:.15;transform:scale(.6)} 60%{opacity:1;transform:scale(1.25)} 100%{opacity:.9;transform:scale(1)} }
+.vx-count { transform-origin: center; transform-box: fill-box; animation: vx-count-k .5s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes vx-ring-k { 0%{transform:scale(.6);opacity:.9} 100%{transform:scale(1.5);opacity:0} }
+.vx-ring { transform-origin: center; transform-box: fill-box; animation: vx-ring-k 2s ease-out infinite; }
+.vscene { width:100%; height:auto; color:var(--txt); display:block; }
+
+/* Reise-Layout */
+.reiseview { position:relative; }
+.reise-bg { position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(700px 420px at 12% -8%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    radial-gradient(600px 400px at 95% 12%, color-mix(in srgb, #7fb069 12%, transparent), transparent 70%),
+    radial-gradient(800px 500px at 50% 110%, color-mix(in srgb, var(--accent2) 14%, transparent), transparent 70%);
+  animation: bgdrift 18s ease-in-out infinite alternate; }
+@keyframes bgdrift { from{transform:translateY(0) scale(1)} to{transform:translateY(-14px) scale(1.03)} }
+.pfad { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:6px 0 14px; }
+.pfadpkt { width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-size:1rem;
+  background:var(--chip); border:1px solid var(--line); opacity:.45; transition:.25s; }
+.pfadpkt.erl { opacity:1; background:color-mix(in srgb, var(--ok) 25%, var(--chip)); border-color:var(--ok); }
+.pfadpkt.skip { opacity:.6; text-decoration:line-through; }
+.pfadpkt.akt { opacity:1; border-color:var(--accent); box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); animation: aktpuls 1.8s infinite; }
+@keyframes aktpuls { 0%,100%{box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent)} 50%{box-shadow:0 0 0 7px color-mix(in srgb, var(--accent) 8%, transparent)} }
+.glass { background:color-mix(in srgb, var(--panel) 78%, transparent); backdrop-filter:blur(14px);
+  border:1px solid color-mix(in srgb, var(--accent) 25%, var(--line)); border-radius:24px;
+  box-shadow:0 18px 50px -18px #0009; }
+.step { padding:20px 18px 18px; max-width:860px; margin:0 auto; }
+.step-kopf { text-align:center; margin-bottom:10px; }
+.step-nr { font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
+.step-kopf h2 { font-size:clamp(1.25rem,3.6vw,1.9rem); color:var(--txt); margin:.25rem 0 .3rem; line-height:1.25; }
+.step-warum { color:var(--mut); font-size:.88rem; max-width:56ch; margin:0 auto; }
+.antwortgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin:16px 0 8px; }
+.antwort { position:relative; text-align:left; background:var(--panel2); border:1.5px solid var(--line); border-radius:18px;
+  padding:10px 12px 12px; cursor:pointer; color:var(--txt); font:inherit; overflow:hidden;
+  transition:transform .18s cubic-bezier(.34,1.4,.64,1), border-color .18s, box-shadow .18s; }
+.antwort:hover { transform:translateY(-4px) scale(1.015); border-color:var(--accent); box-shadow:0 14px 30px -12px #0008; }
+.antwort:active { transform:scale(.98); }
+.antwort-vis { border-radius:12px; background:color-mix(in srgb, var(--bg2) 70%, transparent); padding:4px; margin-bottom:6px; }
+.antwort-titel { font-weight:700; font-size:.98rem; color:var(--accent); }
+.antwort-text { font-size:.8rem; color:var(--txt); opacity:.85; margin:2px 0 4px; line-height:1.4; }
+.antwort-fach { font-size:.66rem; color:var(--mut); border-top:1px dashed var(--line); padding-top:4px; }
+.antwort.picked { animation: pick .26s cubic-bezier(.34,1.56,.64,1); border-color:var(--ok); box-shadow:0 0 0 4px color-mix(in srgb, var(--ok) 25%, transparent); }
+@keyframes pick { 0%{transform:scale(1)} 45%{transform:scale(1.05)} 100%{transform:scale(1)} }
+.step-fuss { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:10px; }
+@keyframes exit-l-k { to{transform:translateX(-46px) scale(.985); opacity:0; filter:blur(2px)} }
+.exit-l { animation: exit-l-k .23s ease-in forwards; }
+@keyframes enter-r-k { from{transform:translateX(52px) scale(.985); opacity:0; filter:blur(3px)} to{transform:none; opacity:1; filter:none} }
+.enter-r { animation: enter-r-k .3s cubic-bezier(.22,1,.36,1); }
+.ringwrap { position:relative; width:132px; margin:2px auto 6px; }
+.ring { width:132px; height:132px; color:var(--txt); }
+.ringtxt { position:absolute; inset:0; display:grid; place-content:center; text-align:center; }
+.ringtxt b { font-size:1.5rem; }
+.ringtxt span { font-size:.62rem; color:var(--mut); text-transform:uppercase; letter-spacing:.1em; }
+.ergebnis-step .ranking { margin:10px 0; }
+.herleitung-chips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+.chip.kleinstatic { padding:4px 10px; font-size:.72rem; cursor:default; }
+.chip.vis em.fach { display:block; font-style:normal; font-size:.6rem; color:var(--mut); margin-top:1px; }
+@media (prefers-reduced-motion: reduce) {
+  .vx-sweep,.vx-pulse,.vx-tw,.vx-tandem,.vx-walk,.vx-walk2,.vx-float,.vx-sun,.vx-dash,.vx-ring,.pfadpkt.akt,.reise-bg { animation:none !important; }
+  .exit-l,.enter-r { animation-duration:.01s !important; }
+}

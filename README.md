@@ -5,7 +5,11 @@ Interaktive, visuelle Bestimmung von **Temnothorax**-Arten und ihren Lookalikes
 Fokus Deutschland + Nachbarraum.
 
 **Kein Bestimmungsbuch, sondern ein Werkzeug:**
-- 🧭 **Schnellpfad** – die App fragt nur die jeweils trennschärfsten Merkmale, als **Bildkarten** (SVG-Miniaturen) statt Fachtext.
+- 🧭 **Visuelle Reise** (Start-Ansicht) – Szene für Szene: animierte Erklär-Bilder zeigen, *worauf* man schaut
+  (Licht-Sweep = Glanz, Vinyl-Rillen = costulae, Tandem-Animation = Verhalten …). Antworten in Alltagsvergleichen
+  („wie Sandpapier“, „wie poliert“), Fachbegriff nur als Fußnote. Snappige Step-Transitions, Fortschritts-Pfad,
+  animierter Stimmigkeits-Ring am Ende.
+- 🎬 **Verhalten bestimmt mit** – Tandemlaufen, Einrollen, Stich-Drohen, Gast bei Waldameisen, Brutraub als eigene Szenen.
 - 📷 **Foto-Check** – eigenes Makro per Drag&Drop, synchron zoom-/pannbar neben dem Belegfoto **derselben Ansicht**.
 - 🌿/🔬 **Feld- & Labor-Modus** – einfache Sprache + Feld-Tipps vs. Messwerte/Tabellen (oben rechts umschaltbar).
 - 🎯 **Lebend-Filter** – Merkmale antippen, Kandidatenliste schrumpft live, jede Karte begründet („Warum?“).

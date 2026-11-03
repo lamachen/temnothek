@@ -92,8 +92,9 @@ const UI = (function () {
   }
 
   function stateChip(c, sid, an) {
-    return `<button class="chip vis ${an ? "an" : ""}" data-c="${c.id}" data-s="${sid}" title="${esc(c.states[sid])}">
-      ${Morph.stateVis(c.id, sid)}<span>${esc(c.states[sid])}</span></button>`;
+    const pl = (c.plain || {})[sid] || { titel: c.states[sid], text: "" };
+    return `<button class="chip vis ${an ? "an" : ""}" data-c="${c.id}" data-s="${sid}" title="${esc(pl.text || c.states[sid])} – Fachbegriff: ${esc(c.states[sid])}">
+      ${Morph.stateVis(c.id, sid)}<span>${esc(pl.titel)}</span><em class="fach">${esc(c.states[sid])}</em></button>`;
   }
 
   function artKarte(t, score) {
@@ -115,6 +116,174 @@ const UI = (function () {
     const sh = k.querySelector(".shield");
     if (sh && b) sh.addEventListener("click", e => { e.stopPropagation(); provenanzPopover(sh, b, t); });
     return k;
+  }
+
+  /* ================= View: REISE (visuelle Führung) ================= */
+  let reise = null;
+  function resetReise() { reise = { antworten: {}, reihenfolge: [], skip: {} }; }
+  const REISE_FRAGE = {
+    c_nest:     ["Wo hast du die Ameisen gesehen?", "Der Fundort grenzt sofort ein: Tippe die Szene, die deiner Beobachtung am nächsten kommt."],
+    c_behavior: ["Ist dir eine auffällige Szene oder ein Verhalten aufgefallen?", "Verhalten ist oft einzigartig – Tandemlaufen z. B. verrät Knotenameisen fast sofort."],
+    c_size:     ["Wie groß ist ein einzelnes Tier – im Vergleich zu Alltagsdingen?", "Größe trennt Gattungen: Myrmica & Co. sind deutlich kräftiger."],
+    c_color:    ["Welchen Farb-Eindruck bekommst du bei Tageslicht?", "Die Grundstimmung hilft – Bänderung und Glanz kommen gleich danach."],
+    c_sculpt:   ["Wie wirkt die Kopf-Oberfläche im guten Licht (Makro/Handy-Zoom)?", "Das Muster auf dem Kopf ist eines der stärksten Merkmale überhaupt."],
+    c_spine:    ["Was ragt am Hinterrücken heraus – die „Rückendornen“?", "Dornenlänge und -form trennen Arten und Gattungen."],
+    c_node:     ["Welche Form hat der kleine Buckel an der „Taille“ (von der Seite)?", "Der Stielchen-Knoten ist der Namensgeber der Knotenameisen."],
+    c_hair:     ["Siehst du abstehende Borsten auf Rücken und Hinterleib?", "Manche Arten wirken deutlich „fransiger“ als andere."],
+    c_gaster:   ["Wie sieht der Hinterleib aus?", "Binden oder Spiegelglanz sind schnelle Ausschluss-Kriterien."],
+    c_ant:      ["Nur für Makro-Profis: Wie viele Fühlerglieder zählst du?", "Letzter Feinschliff – gerne überspringen, wenn nicht zählbar."]
+  };
+
+  function viewReise() {
+    if (!reise) resetReise();
+    const v = el("div", "view reiseview");
+    v.innerHTML = `<div class="reise-bg" aria-hidden="true"></div><div id="stepwrap"></div>`;
+    const wrap = v.querySelector("#stepwrap");
+
+    const ctxR = () => ({ land: state.land || "DE", monat: state.monat, habitate: [], choices: reise.antworten });
+    const ranking = () => Engine.bewerte(ctxR());
+    const naechster = () => REISEN_FOLGE.find(c => !reise.antworten[c] && !reise.skip[c]) || null;
+
+    function fortschritt() {
+      return `<div class="pfad">${REISEN_FOLGE.map(c => {
+        const ch = CHARAKTERE.find(x => x.id === c);
+        const st = reise.antworten[c] ? "erl" : reise.skip[c] ? "skip" : c === naechster() ? "akt" : "";
+        return `<span class="pfadpkt ${st}" title="${esc(ch.label)}">${ch.icon}</span>`;
+      }).join("")}</div>`;
+    }
+
+    function renderStep() {
+      const cid = naechster();
+      if (!cid) return renderErgebnis(true);
+      const c = CHARAKTERE.find(x => x.id === cid);
+      const [frage, warum] = REISE_FRAGE[cid] || [c.label, ""];
+      wrap.innerHTML = `
+        ${fortschritt()}
+        <section class="step glass">
+          <div class="step-kopf">
+            <span class="step-nr">Szene ${reise.reihenfolge.length + 1}</span>
+            <h2>${esc(frage)}</h2>
+            <p class="step-warum">${esc(warum)}</p>
+          </div>
+          <div class="antwortgrid">
+            ${Object.keys(c.states).map(sid => {
+              const pl = (c.plain || {})[sid] || { titel: c.states[sid], text: "" };
+              return `<button class="antwort" data-s="${sid}">
+                <div class="antwort-vis">${Visuals.forState(cid, sid)}</div>
+                <div class="antwort-titel">${esc(pl.titel)}</div>
+                <div class="antwort-text">${esc(pl.text)}</div>
+                <div class="antwort-fach">Fachbegriff: ${esc(c.states[sid])}</div>
+              </button>`;
+            }).join("")}
+          </div>
+          <div class="step-fuss">
+            ${reise.reihenfolge.length ? `<button class="btn winzig" id="zurueck">← zurück</button>` : `<button class="btn winzig" id="zurueck" style="visibility:hidden">.</button>`}
+            <button class="btn winzig" id="skip">weiß ich nicht ⏭</button>
+            <button class="btn winzig" id="experte">🎛️ Experten-Filter</button>
+          </div>
+        </section>`;
+      let locked = false;
+      wrap.querySelectorAll(".antwort").forEach(b => b.addEventListener("click", () => {
+        if (locked) return; locked = true;
+        b.classList.add("picked");
+        setTimeout(() => {
+          reise.antworten[cid] = b.dataset.s;
+          if (!reise.reihenfolge.includes(cid)) reise.reihenfolge.push(cid);
+          wechsle(renderNext);
+        }, 240);
+      }));
+      wrap.querySelector("#skip").addEventListener("click", () => { reise.skip[cid] = true; wechsle(renderNext); });
+      wrap.querySelector("#zurueck").addEventListener("click", () => {
+        const last = reise.reihenfolge.pop();
+        if (last) delete reise.antworten[last]; else { const l = REISEN_FOLGE.filter(c => reise.skip[c]).pop(); if (l) delete reise.skip[l]; }
+        wechsle(renderStep);
+      });
+      wrap.querySelector("#experte").addEventListener("click", () => {
+        state.choices = Object.assign({}, reise.antworten); save(); location.hash = "#/filter"; render();
+      });
+    }
+
+    function renderNext() {
+      const r = ranking();
+      const amp = Engine.ampel(r, ctxR());
+      const sicher = amp.stufe === "gruen" || r[0].anteil >= 0.55;
+      if (sicher && reise.reihenfolge.length >= 2) return renderErgebnis(false);
+      renderStep();
+    }
+
+    function wechsle(build) {
+      const step = wrap.querySelector(".step") || wrap;
+      step.classList.add("exit-l");
+      setTimeout(() => { step.classList.remove("exit-l"); build(); const n = wrap.querySelector(".step"); if (n) { n.classList.add("enter-r"); requestAnimationFrame(() => n.classList.remove("enter-r")); } }, 230);
+    }
+
+    function renderErgebnis(complete) {
+      const r = ranking();
+      const amp = Engine.ampel(r, ctxR());
+      const top = r.filter(x => x.score > 0).slice(0, 3);
+      const anteil = top[0] ? top[0].anteil : 0;
+      const umfang = 2 * Math.PI * 52;
+      wrap.innerHTML = `
+        ${fortschritt()}
+        <section class="step glass ergebnis-step">
+          <div class="ringwrap">
+            <svg class="ring" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" opacity=".15" stroke-width="8"/>
+              <circle id="ringfg" cx="60" cy="60" r="52" fill="none" stroke="${amp.stufe === "gruen" ? "#7fb069" : amp.stufe === "gelb" ? "#e0a458" : "#c1553f"}" stroke-width="8" stroke-linecap="round"
+                stroke-dasharray="${umfang}" stroke-dashoffset="${umfang}" transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="ringtxt"><b>${Math.round(anteil * 100)}%</b><span>Stimmigkeit</span></div>
+          </div>
+          <h2>${complete ? "Deine Reise endet hier – vorläufig:" : "Das passt zu deiner Beobachtung:"}</h2>
+          <div class="ampel ampel-${amp.stufe}"><span class="licht"></span><div>${esc(amp.text)}</div></div>
+          <div class="ranking">${top.map(x => { const k = artKarte(x.taxon, x.anteil); return k.outerHTML; }).join("")}</div>
+          <div class="herleitung-chips">${reise.reihenfolge.map(cid => {
+            const c = CHARAKTERE.find(x => x.id === cid);
+            const pl = (c.plain || {})[reise.antworten[cid]] || {};
+            return `<span class="chip kleinstatic">${c.icon} ${esc(pl.titel || reise.antworten[cid])}</span>`;
+          }).join("")}</div>
+          <div class="row">
+            ${top.length >= 2 ? `<button class="btn" id="rduell">⚔️ Duell: Top 2</button>` : ""}
+            ${top.length ? `<button class="btn" id="rdossier">📖 Dossier</button>` : ""}
+            ${amp.stufe === "gruen" ? `<button class="btn" id="rjournal">📓 Ins Journal</button>` : ""}
+            <button class="btn winzig" id="rneu">🧭 Neue Reise</button>
+            <button class="btn winzig" id="rexperte">🎛️ Experten-Filter</button>
+          </div>
+        </section>`;
+      /* Karten-Events (outerHTML verloren) -> neu anbinden */
+      wrap.querySelectorAll(".ranking .artkarte").forEach((k, i) => {
+        k.querySelector(".artkarte-bild").addEventListener("click", () => location.hash = "#/art/" + top[i].taxon.id);
+        const sh = k.querySelector(".shield");
+        if (sh) sh.addEventListener("click", e => { e.stopPropagation(); const b = top[i].taxon.bilder[0]; if (b) provenanzPopover(sh, b, top[i].taxon); });
+      });
+      const rd = wrap.querySelector("#rduell");
+      if (rd) rd.addEventListener("click", () => {
+        const d = DUELLE.findIndex(d => (d.a === top[0].taxon.id && d.b === top[1].taxon.id) || (d.b === top[0].taxon.id && d.a === top[1].taxon.id));
+        location.hash = "#/duell/" + (d >= 0 ? d : 0); render();
+      });
+      const rdo = wrap.querySelector("#rdossier");
+      if (rdo) rdo.addEventListener("click", () => { location.hash = "#/art/" + top[0].taxon.id; render(); });
+      const rj = wrap.querySelector("#rjournal");
+      if (rj) rj.addEventListener("click", async () => {
+        if (!("indexedDB" in window)) return alert("Journal benötigt IndexedDB.");
+        const db = await openDB();
+        const herl = reise.reihenfolge.map(cid => { const c = CHARAKTERE.find(x => x.id === cid); return `${c.label}: ${(c.plain || {})[reise.antworten[cid]]?.titel || reise.antworten[cid]}`; }).join(" · ");
+        await putObs(db, { id: Date.now(), datum: new Date().toISOString().slice(0, 10), ort: "", art: top[0].taxon.name,
+          sicher: amp.stufe === "gruen" ? "grün – stimmig" : amp.stufe === "gelb" ? "gelb – wahrscheinlich" : "rot – kryptisch/offen",
+          herleitung: `Visuelle Reise · ${herl}`, notiz: "", foto: sessionFoto.data });
+        location.hash = "#/journal"; render();
+      });
+      wrap.querySelector("#rneu").addEventListener("click", () => { resetReise(); wechsle(renderStep); });
+      wrap.querySelector("#rexperte").addEventListener("click", () => { state.choices = Object.assign({}, reise.antworten); save(); location.hash = "#/filter"; render(); });
+      /* Ring-Animation */
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const fg = wrap.querySelector("#ringfg");
+        if (fg) { fg.style.transition = "stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1)"; fg.style.strokeDashoffset = String(umfang * (1 - Math.min(1, anteil))); }
+      }));
+    }
+
+    renderStep();
+    return v;
   }
 
   /* ================= View: BESTIMMEN ================= */
@@ -838,10 +1007,10 @@ const UI = (function () {
       <h1>TEMNOTHEK</h1>
       <p class="lead">Interaktive Bestimmung von <i>Temnothorax</i> & Lookalikes – Deutschland & Nachbarraum.</p>
       <div class="onb-steps">
-        <div><b>1 · Schnellpfad:</b> Die App fragt nur, was wirklich trennt – als Bildkarten statt Fachchinesisch.</div>
-        <div><b>2 · Foto-Check:</b> Dein Makro synchron zoombar neben Museums-Belegfotos derselben Ansicht.</div>
-        <div><b>3 · Ehrliche Ampel:</b> Grün = stimmig · Gelb = wahrscheinlich · Rot = per Foto nicht trennbar.</div>
-        <div><b>Modus:</b> 🌿 Feld (einfach) oder 🔬 Labor (Messwerte) – oben rechts umschaltbar.</div>
+        <div><b>1 · Visuelle Reise:</b> Szene für Szene zeigt dir die App in Animationen, <i>worauf</i> du schauen sollst – du tippst Bilder an, keine Fachbegriffe.</div>
+        <div><b>2 · Verhalten zählt:</b> Tandemlaufen, Einrollen, Brutraub – einzigartige Szenen bestimmen mit.</div>
+        <div><b>3 · Ehrliches Ende:</b> Animierter Stimmigkeits-Ring + Ampel: Grün = stimmig · Gelb = wahrscheinlich · Rot = per Foto nicht trennbar.</div>
+        <div><b>Danach:</b> Foto-Check, Duell, Dossier, Journal – und für Profis der 🎛️ Experten-Filter.</div>
       </div>
       <button class="btn gross" id="onbstart">Los geht's</button>
       <p class="hint">Privates Projekt · keine Konten · Fotos & Funde bleiben lokal</p>
@@ -852,7 +1021,8 @@ const UI = (function () {
 
   /* ---------------- Router & Shell ---------------- */
   const NAV = [
-    ["#/bestimmen", "🎯", "Bestimmen"],
+    ["#/reise", "🧭", "Reise"],
+    ["#/filter", "🎛️", "Filter"],
     ["#/arten", "📚", "Arten"],
     ["#/duell", "⚔️", "Duell"],
     ["#/messbank", "🔬", "Mess-Bank"],
@@ -873,7 +1043,8 @@ const UI = (function () {
     else if (hash.startsWith("#/messbank")) view = viewMessbank();
     else if (hash.startsWith("#/journal")) view = viewJournal();
     else if (hash.startsWith("#/wissen")) view = viewWissen();
-    else view = viewBestimmen();
+    else if (hash.startsWith("#/filter")) view = viewBestimmen();
+    else view = viewReise();
     main.appendChild(view);
     document.querySelectorAll("nav.tabs a").forEach(a => {
       const base = a.getAttribute("href").split("/").slice(0, 2).join("/");

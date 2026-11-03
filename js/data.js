@@ -7,7 +7,7 @@
 
 const APP_META = {
   name: "TEMNOTHEK",
-  version: "1.2.0",
+  version: "3.0.0",
   stand: "2026-11",
   lizenzHinweis: "Privates, nicht-kommerzielles Projekt. Belegfotos: AntWeb / California Academy of Sciences via AntWiki & Wikimedia Commons, CC-BY 4.0."
 };
@@ -593,3 +593,106 @@ TAXA.forEach(t => {
   t.land = LANDGEWICHTE[t.id] || { DE: 0.5, AT: 0.5, CH: 0.5 };
   t.aktivitaet = AKTIVITAETSMUSTER[AKTIVITAET_PRO_TAXON[t.id] || "wald"];
 });
+
+/* ---------- v3: Verhalten als Merkmal + Alltags-Sprache für ALLES ---------- */
+CHARAKTERE.push({
+  id: "c_behavior", region: "Verhalten", label: "Verhalten / auffällige Szene", icon: "🎬",
+  erklaerung: "Was hast du beobachtet? Verhalten ist oft eindeutiger als jedes Haar.",
+  states: {
+    tandem: "Tandemlaufen beim Umzug",
+    ruhig: "langsam & vorsichtig, rollt sich ein",
+    aggressiv: "flink & wehrhaft (Stich/Gift)",
+    gast: "winziger Glanzläufer zwischen Waldameisen",
+    raid: "trägt fremde Brut weg"
+  }
+});
+ERKLAERUNGEN.c_behavior = "Verhalten beobachten lohnt: Manche Arten verraten sich durch einzigartige Szenen.";
+const VERHALTEN = {
+  t_nylanderi:   { ruhig: 1, tandem: 0.9 },
+  t_crassispinus:{ ruhig: 1, tandem: 0.9 },
+  t_crasecundus: { ruhig: 1, tandem: 0.9 },
+  t_parvulus:    { ruhig: 1, tandem: 0.6 },
+  t_affinis:     { ruhig: 0.9, tandem: 0.4 },
+  t_saxonicus:   { ruhig: 1, tandem: 0.5 },
+  t_recedens:    { ruhig: 1 },
+  t_unifasciatus:{ ruhig: 1 },
+  t_tuberum:     { ruhig: 1 },
+  t_tergestinus: { ruhig: 1 },
+  l_acervorum:   { ruhig: 0.8, tandem: 0.2 },
+  l_muscorum:    { ruhig: 0.9 },
+  l_fabarum:     { ruhig: 0.9 },
+  f_nitidulus:   { gast: 1, ruhig: 0.3 },
+  h_sublaevis:   { raid: 1, ruhig: 0.4 },
+  s_debile:      { ruhig: 1 },
+  m_schencki:    { aggressiv: 1 }
+};
+TAXA.forEach(t => { t.chars.c_behavior = VERHALTEN[t.id] || { ruhig: 0.6 }; });
+
+/* Alltags-Sprache: Titel + Bild-Text je Zustand (statt Fachjargon als Frage) */
+const PLAIN = {
+  c_sculpt: {
+    glatt:     { titel: "Wie poliert",        text: "Das Licht spiegelt sich klar auf dem Kopf – wie bei einem polierten Stein." },
+    areoGlanz: { titel: "Wie Seide",          text: "Fein genetzt, aber mit sanftem Schimmer; die Kopfmitte wirkt heller." },
+    areoMatt:  { titel: "Wie Sandpapier",     text: "Gleichmäßig matt – nirgends ein Glanzpunkt, wie feines Sandpapier." },
+    costulae:  { titel: "Wie eine Vinylplatte", text: "Matt, mit feinen Längsrillen – wie die Rillen einer Schallplatte." },
+    rugos:     { titel: "Wie alte Baumrinde", text: "Grobe Runzeln und Kanten, tief matt – wie rissige Rinde oder alte Haut." }
+  },
+  c_spine: {
+    kurz:  { titel: "Nur stumpfe Zähnchen", text: "Am Hinterrücken sitzen kaum mehr als kurze, stumpfe Zacken." },
+    mittel:{ titel: "Klare Dornen",         text: "Deutliche, zugespitzte Dornen – etwa so lang wie an der Basis breit." },
+    lang:  { titel: "Lange Stacheln",       text: "Die Dornen ragen auffällig ab – wie kleine Dornen einer Rose." }
+  },
+  c_node: {
+    schuppe: { titel: "Flache Schuppe",   text: "Der Buckel ist kaum erhoben und sanft gerundet – wie eine kleine Schuppe." },
+    stumpf:  { titel: "Breiter First",    text: "Oben ein breiter, flacher Rücken – wie ein stumpfer Hausfirst." },
+    scharf:  { titel: "Scharfe Kante",    text: "Oben eine schmale, scharfe Kante – wie ein schmaler Grat." },
+    knotig:  { titel: "Runder Knopf",     text: "Ein deutlich rundes Knöpfchen auf dem Stiel – wie eine kleine Perle." }
+  },
+  c_hair: {
+    spaerlich: { titel: "Fast nackt",     text: "Keine abstehenden Borsten zu sehen – der Körper wirkt glatt behaart." },
+    maessig:   { titel: "Einzelne Borsten", text: "Hier und dort stehen feine Borsten ab – erst im Makro offensichtlich." },
+    dicht:     { titel: "Wie eine Bürste", text: "Viele deutlich abstehende Borsten – der Umriss wirkt fransig." }
+  },
+  c_size: {
+    s1: { titel: "Stecknadelkopf", text: "Kaum größer als ein Stecknadelkopf – unter 2,2 mm." },
+    s2: { titel: "Reiskorn",       text: "Etwa wie ein kleines Reiskorn – 2,2 bis 3 mm." },
+    s3: { titel: "Streichholzkopf",text: "Deutlich kräftiger – wie ein Streichholzkopf, 3 bis 4 mm." },
+    s4: { titel: "Größer",         text: "Größer als ein Streichholzkopf – über 4 mm." }
+  },
+  c_color: {
+    gelb:     { titel: "Wie heller Honig", text: "Gelb bis strohfarben, insgesamt sehr hell." },
+    gelbbraun:{ titel: "Wie Milchkaffee",  text: "Helles Gelbbraun, wie Milchkaffee oder helles Leder." },
+    braun:    { titel: "Wie Kastanie",     text: "Sattes Mittelbraun, wie eine Kastanienschale." },
+    schwarz:  { titel: "Wie Zartbitter",   text: "Dunkelbraun bis schwarz, wie Zartbitterschokolade." },
+    band:     { titel: "Zweifarbig",       text: "Helle Binde(n) auf dunklerem Körper – deutlich gemustert." }
+  },
+  c_gaster: {
+    einheitlich: { titel: "Einfarbig",     text: "Der Hinterleib ist einheitlich gefärbt, ohne Binde." },
+    band:        { titel: "Helle Binde",   text: "Ein helles Band ringelt sich über den Hinterleib." },
+    spiegel:     { titel: "Wie Glas",      text: "Der Hinterleib spiegelt wie poliertes Glas, mit feinen Pünktchen." }
+  },
+  c_ant: {
+    a11: { titel: "11 Glieder", text: "Die Fühler haben 11 Glieder (nur im starken Makro zählbar)." },
+    a12: { titel: "12 Glieder", text: "Die Fühler haben 12 Glieder (nur im starken Makro zählbar)." }
+  },
+  c_nest: {
+    eichel: { titel: "Eichel & Zweig",  text: "In einer Eichel oder einem toten Zweig – aufgebrochen liegt Brut darin." },
+    baum:   { titel: "Auf dem Baum",    text: "An Rinde, in Astlöchern oder Stammhöhlen – die Tiere laufen am Holz." },
+    stein:  { titel: "Stein & Mauer",   text: "Unter Steinen oder in Mauerspalten – trocken und sonnig." },
+    streu:  { titel: "Laub & Moos",     text: "Im Streu- oder Moospolster am Boden, schattig-feucht bis trocken." },
+    parasit:{ titel: "In fremdem Nest", text: "Mitten im Nest anderer Ameisenarten – als Gast oder Räuber." }
+  },
+  c_behavior: {
+    tandem:    { titel: "Tandemlaufen",   text: "Beim Umzug führt eine Ameise die andere am Fühler – Hintereinander im Tandem. Klassisch für Temnothorax!" },
+    ruhig:     { titel: "Vorsichtig & rollt sich ein", text: "Langsam, zögerlich; bei Störung einrollen oder fliehen statt angreifen." },
+    aggressiv: { titel: "Flink & wehrhaft", text: "Schnell, attackiert und krümmt den Hinterleib zum Stich." },
+    gast:      { titel: "Glanzläufer im Ameisenhaufen", text: "Winzige, spiegelglänzende Tiere, die zwischen großen Waldameisen laufen." },
+    raid:      { titel: "Brutraub",       text: "Eine kräftige Ameise trägt Brut aus einem fremden Nest weg." }
+  }
+};
+CHARAKTERE.forEach(c => { c.plain = PLAIN[c.id] || {}; });
+
+/* Reihenfolge der visuellen Reise (freundlich → spezifisch) */
+const REISEN_FOLGE = ["c_nest", "c_behavior", "c_size", "c_color", "c_sculpt", "c_spine", "c_node", "c_hair", "c_gaster", "c_ant"];
+
+QUELLEN.push({ id: "Q8", text: "Tandemlaufen als Umzugsverhalten bei Temnothorax: belegt u. a. durch die AntWiki-Bildgalerie (Tandem-Foto T. crassispinus, M. Kukla) und die Literatur zu Tandem-Rekrutierung (Franks & Richardson 2006; Toupo et al. 2015).", url: "https://antwiki.org/wiki/Temnothorax_crassispinus" });
