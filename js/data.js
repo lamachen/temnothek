@@ -7,7 +7,7 @@
 
 const APP_META = {
   name: "TEMNOTHEK",
-  version: "3.0.0",
+  version: "3.1.0",
   stand: "2026-11",
   lizenzHinweis: "Privates, nicht-kommerzielles Projekt. Belegfotos: AntWeb / California Academy of Sciences via AntWiki & Wikimedia Commons, CC-BY 4.0."
 };
@@ -126,6 +126,7 @@ const TAXA = [
   morphParams:{ spineAngle:37, spineLen:0.31, nodeAngle:107, nodeHeight:0.385, headRatio:1.14, sculpt:"areoGlanz" },
   bilder:[
     { file:"t_crassispinus_profile.jpg", view:"Profil", specimen:"CASENT0173198", quelle:"Wikimedia Commons / AntWeb", url:"https://commons.wikimedia.org/wiki/File:Temnothorax_crassispinus_casent0173198_profile_1.jpg" },
+    { file:"t_crassispinus_head.jpg", view:"Kopf frontal", specimen:"CASENT0173198", quelle:"AntWiki: Temnothorax crassispinus", url:"https://antwiki.org/wiki/Temnothorax_crassispinus" },
     { file:"t_crassispinus_dorsal.jpg", view:"Dorsal", specimen:"CASENT0173198", quelle:"Wikimedia Commons / AntWeb", url:"https://commons.wikimedia.org/wiki/File:Temnothorax_crassispinus_casent0173198_dorsal_1.jpg" }
   ],
   lookalikes:["t_nylanderi","t_crasecundus","t_parvulus"]
@@ -147,6 +148,7 @@ const TAXA = [
   morph:{},
   morphParams:{ spineAngle:37, spineLen:0.30, nodeAngle:107, nodeHeight:0.39, headRatio:1.13, sculpt:"areoGlanz" },
   bilder:[
+    { file:"t_crasecundus_profile.jpg", view:"Profil", specimen:"Belegbild der Revision", quelle:"AntWiki: Temnothorax crasecundus", url:"https://antwiki.org/wiki/Temnothorax_crasecundus" },
     { file:"t_crasecundus_head.jpg", view:"Kopf frontal", specimen:"Belegbild der Revision", quelle:"AntWiki: Temnothorax crasecundus (Revisionsmaterial Seifert & Csősz 2015)", url:"https://antwiki.org/wiki/Temnothorax_crasecundus" },
     { file:"t_crasecundus_dorsal.jpg", view:"Dorsal", specimen:"Belegbild der Revision", quelle:"AntWiki: Temnothorax crasecundus", url:"https://antwiki.org/wiki/Temnothorax_crasecundus" }
   ],
@@ -696,3 +698,51 @@ CHARAKTERE.forEach(c => { c.plain = PLAIN[c.id] || {}; });
 const REISEN_FOLGE = ["c_nest", "c_behavior", "c_size", "c_color", "c_sculpt", "c_spine", "c_node", "c_hair", "c_gaster", "c_ant"];
 
 QUELLEN.push({ id: "Q8", text: "Tandemlaufen als Umzugsverhalten bei Temnothorax: belegt u. a. durch die AntWiki-Bildgalerie (Tandem-Foto T. crassispinus, M. Kukla) und die Literatur zu Tandem-Rekrutierung (Franks & Richardson 2006; Toupo et al. 2015).", url: "https://antwiki.org/wiki/Temnothorax_crassispinus" });
+
+/* ---------- v3.1: Echt-Bild-Belege je Merkmalszustand (Medien-Kombination) ---------- */
+const FOTO_BEISPIELE = {
+  c_sculpt: {
+    glatt:     [{ t:"t_recedens", f:"t_recedens_head.jpg", lab:"Kopf · T. recedens" }],
+    areoGlanz: [{ t:"t_crassispinus", f:"t_crassispinus_head.jpg", lab:"Kopf · T. crassispinus" }],
+    areoMatt:  [{ t:"t_parvulus", f:"t_parvulus_head.jpg", lab:"Kopf · T. parvulus" }],
+    costulae:  [{ t:"t_nylanderi", f:"t_nylanderi_head.jpg", lab:"Kopf · T. nylanderi" }],
+    rugos:     [{ t:"t_saxonicus", f:"t_saxonicus_head.jpg", lab:"Kopf · T. saxonicus" }, { t:"t_affinis", f:"t_affinis_profile.jpg", lab:"Profil · T. affinis" }]
+  },
+  c_spine: {
+    kurz:  [{ t:"l_acervorum", f:"l_acervorum_profile.jpg", lab:"Profil · L. acervorum" }],
+    mittel:[{ t:"t_crassispinus", f:"t_crassispinus_profile.jpg", lab:"Profil · T. crassispinus" }],
+    lang:  [{ t:"t_affinis", f:"t_affinis_profile.jpg", lab:"Profil · T. affinis" }]
+  },
+  c_node: {
+    stumpf: [{ t:"t_crassispinus", f:"t_crassispinus_profile.jpg", lab:"Profil · T. crassispinus" }],
+    knotig: [{ t:"l_muscorum", f:"l_muscorum_profile.jpg", lab:"Profil · L. muscorum" }],
+    schuppe:[{ t:"m_schencki", f:"m_schencki_profile.jpg", lab:"Profil · Myrmica" }]
+  },
+  c_hair: {
+    dicht:   [{ t:"t_tuberum", f:"t_tuberum_profile.jpg", lab:"Profil · T. tuberum" }],
+    maessig: [{ t:"t_nylanderi", f:"t_nylanderi_profile.jpg", lab:"Profil · T. nylanderi" }]
+  },
+  c_gaster: {
+    band:    [{ t:"t_unifasciatus", f:"t_unifasciatus_profile.jpg", lab:"Profil · T. unifasciatus" }],
+    spiegel: [{ t:"f_nitidulus", f:"f_nitidulus_dorsal.jpg", lab:"Dorsal · F. nitidulus" }]
+  },
+  c_size: {
+    s2: [{ t:"t_nylanderi", f:"t_nylanderi_profile.jpg", lab:"Profil · T. nylanderi" }],
+    s3: [{ t:"l_acervorum", f:"l_acervorum_profile.jpg", lab:"Profil · L. acervorum" }]
+  },
+  c_color: {
+    gelbbraun:[{ t:"t_nylanderi", f:"t_nylanderi_profile.jpg", lab:"T. nylanderi" }],
+    braun:    [{ t:"t_affinis", f:"t_affinis_profile.jpg", lab:"T. affinis" }],
+    schwarz:  [{ t:"t_recedens", f:"t_recedens_head.jpg", lab:"T. recedens" }],
+    band:     [{ t:"t_unifasciatus", f:"t_unifasciatus_profile.jpg", lab:"T. unifasciatus" }]
+  },
+  c_behavior: {
+    gast: [{ t:"f_nitidulus", f:"f_nitidulus_dorsal.jpg", lab:"F. nitidulus" }]
+  }
+};
+/* Foto-Marker: ungefähre Region je Ansicht ("schau hier") */
+const FOTO_MARKS = {
+  profil: [ {x:22,y:42,l:"Kopf-Skulptur"}, {x:62,y:34,l:"Propodealdornen"}, {x:73,y:50,l:"Knoten"} ],
+  "kopf": [ {x:50,y:36,l:"Skulptur"}, {x:50,y:64,l:"Frontalcarinae"} ],
+  dorsal:[ {x:48,y:32,l:"Dornen"}, {x:52,y:52,l:"Knoten"} ]
+};

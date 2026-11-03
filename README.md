@@ -5,10 +5,13 @@ Interaktive, visuelle Bestimmung von **Temnothorax**-Arten und ihren Lookalikes
 Fokus Deutschland + Nachbarraum.
 
 **Kein Bestimmungsbuch, sondern ein Werkzeug:**
-- 🧭 **Visuelle Reise** (Start-Ansicht) – Szene für Szene: animierte Erklär-Bilder zeigen, *worauf* man schaut
-  (Licht-Sweep = Glanz, Vinyl-Rillen = costulae, Tandem-Animation = Verhalten …). Antworten in Alltagsvergleichen
-  („wie Sandpapier“, „wie poliert“), Fachbegriff nur als Fußnote. Snappige Step-Transitions, Fortschritts-Pfad,
-  animierter Stimmigkeits-Ring am Ende.
+- 🧭 **Visuelle Reise** (Start-Ansicht) – ein **Kameraflug über eine Whiteboard-Tafel**: ein geschwungener Pfad
+  zeichnet sich von Station zu Station vor, die Kamera fliegt hinterher und zoomt an Detail-Skizzen heran
+  (Skizzen liegen proportional klein auf der Tafel, der Zoom gleicht aus). Jede Station zeichnet sich ein,
+  beantwortete Szenen bekommen ein **Echtfoto-Beleg** als Kreis-Blendung dazu. Antworten in Alltagsvergleichen
+  („wie Sandpapier“, „wie poliert“), Fachbegriff nur als Fußnote; Foto-Beweis-Chips (🛡) kombinieren Skizze + Museumsfoto.
+- 🖼️ **Leitansicht Profil** – alle Arten-Karten und Duelle starten in derselben Vergleichs-Perspektive;
+  Zweitansichten (Kopf/Dorsal) sitzen bewusst in Duell-Umschalter, Dossier-Galerie und Merkmal-Punkten (🎯).
 - 🎬 **Verhalten bestimmt mit** – Tandemlaufen, Einrollen, Stich-Drohen, Gast bei Waldameisen, Brutraub als eigene Szenen.
 - 📷 **Foto-Check** – eigenes Makro per Drag&Drop, synchron zoom-/pannbar neben dem Belegfoto **derselben Ansicht**.
 - 🌿/🔬 **Feld- & Labor-Modus** – einfache Sprache + Feld-Tipps vs. Messwerte/Tabellen (oben rechts umschaltbar).

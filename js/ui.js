@@ -33,6 +33,13 @@ const UI = (function () {
     const m = { profil: /profil/i, kopf: /kopf/i, dorsal: /dorsal/i }[view];
     return (m && t.bilder.find(b => m.test(b.view))) || t.bilder[0] || null;
   }
+  /* v3.1: Leitansicht Profil zuerst; Marker-Punkte ("schau hier") je Ansicht */
+  const rangAnsicht = vw => /profil/i.test(vw) ? 0 : /kopf/i.test(vw) ? 1 : /dorsal/i.test(vw) ? 2 : 3;
+  function mkDots(view) {
+    const key = /profil/i.test(view) ? "profil" : /kopf/i.test(view) ? "kopf" : /dorsal/i.test(view) ? "dorsal" : null;
+    if (!key || !FOTO_MARKS[key]) return "";
+    return FOTO_MARKS[key].map(m => `<span class="mkdot" style="left:${m.x}%;top:${m.y}%" title="${esc(m.l)}"></span>`).join("");
+  }
 
   /* ---------------- Provenanz-Popover ---------------- */
   let popEl = null;
@@ -98,7 +105,8 @@ const UI = (function () {
   }
 
   function artKarte(t, score) {
-    const b = t.bilder[0];
+    /* v3.1: Leitansicht = Profil, damit ALLE Karten vergleichbar orientiert sind */
+    const b = refBild(t, "profil") || t.bilder[0];
     const k = el("div", "artkarte");
     k.innerHTML = `
       <div class="artkarte-bild">
@@ -134,23 +142,76 @@ const UI = (function () {
     c_ant:      ["Nur für Makro-Profis: Wie viele Fühlerglieder zählst du?", "Letzter Feinschliff – gerne überspringen, wenn nicht zählbar."]
   };
 
+  let reiseCleanup = null;
   function viewReise() {
     if (!reise) resetReise();
+    if (reiseCleanup) { reiseCleanup(); reiseCleanup = null; }
     const v = el("div", "view reiseview");
-    v.innerHTML = `<div class="reise-bg" aria-hidden="true"></div><div id="stepwrap"></div>`;
+    v.innerHTML = `<div class="reise-bg" aria-hidden="true"></div>
+      <div class="kamera" id="kamera"><div class="board" id="board"></div>
+        <div class="kamera-hud" id="khud"></div></div>
+      <div id="stepwrap"></div>`;
     const wrap = v.querySelector("#stepwrap");
+    const kamera = v.querySelector("#kamera");
+
+    /* ---- Whiteboard-Tafel: EIN Svg, Pfad zeichnet sich vor, Kamera fliegt hinterher ---- */
+    const B = Visuals.boardSVG(REISEN_FOLGE.map((cid, i) => ({ cid, nr: i + 1, label: (CHARAKTERE.find(x => x.id === cid) || {}).label || cid })));
+    const board = v.querySelector("#board");
+    board.innerHTML = B.svg;
+    const wbpath = board.querySelector("#wbpath");
+    const stations = [...board.querySelectorAll(".station")];
+    let curIdx = 0;
+
+    function camera(i, sofort) {
+      curIdx = i;
+      const cid = i < REISEN_FOLGE.length ? REISEN_FOLGE[i] : "ziel";
+      const z = Visuals.STATION_ZOOM[cid] || 1.05;
+      const p = B.pts[i + 1] || B.pts[B.pts.length - 1];
+      const kw = kamera.clientWidth || 640, kh = kamera.clientHeight || 380;
+      if (sofort) board.style.transition = "none";
+      board.style.transform = `translate(${(kw / 2 - z * p.x).toFixed(1)}px, ${(kh / 2 - z * p.y).toFixed(1)}px) scale(${z})`;
+      if (sofort) requestAnimationFrame(() => { board.style.transition = ""; });
+      /* der Pfad zeichnet sich synchron zur Kamera bis zur aktuellen Station vor */
+      const frac = (i + 1) / (B.pts.length - 1);
+      wbpath.style.strokeDashoffset = String(100 - 100 * frac);
+      const ch = CHARAKTERE.find(x => x.id === cid);
+      v.querySelector("#khud").innerHTML = cid === "ziel"
+        ? `🏁 <b>Ziel erreicht</b> · alle ${REISEN_FOLGE.length} Szenen liegen auf der Tafel`
+        : `🧭 Szene <b>${i + 1}/${REISEN_FOLGE.length}</b> · ${esc(ch ? ch.label : "")}`;
+    }
+
+    function syncBoard(i) {
+      stations.forEach((stG, j) => {
+        const cid = REISEN_FOLGE[j];
+        const ant = cid ? reise.antworten[cid] : null;
+        const skip = cid ? reise.skip[cid] : null;
+        const live = j <= i;
+        const war = stG.classList.contains("live");
+        stG.classList.toggle("live", live);
+        if (!live && war) stG.querySelectorAll(".fotoclip, .fotorahmen, .fcap").forEach(n => n.remove());
+        stG.classList.toggle("done", !!ant);
+        stG.classList.toggle("skip", !!skip && !ant);
+        if (ant && cid && !stG.querySelector(".fotoclip")) {
+          const chips = (FOTO_BEISPIELE[cid] || {})[ant] || [];
+          const ch0 = chips[0];
+          if (ch0) {
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            g.innerHTML = `<circle class="fotorahmen" cx="88" cy="-4" r="56"/>
+              <image class="fotoclip" href="assets/img/${ch0.f}" xlink:href="assets/img/${ch0.f}" x="36" y="-56" width="104" height="104" preserveAspectRatio="xMidYMid slice"/>
+              <text class="fcap" x="88" y="70">${esc(ch0.lab)}</text>`;
+            stG.appendChild(g);
+          }
+        }
+        if (!ant) stG.querySelectorAll(".fotoclip, .fotorahmen, .fcap").forEach(n => n.remove());
+      });
+    }
+    const onRs = () => camera(curIdx, true);
+    window.addEventListener("resize", onRs);
+    reiseCleanup = () => window.removeEventListener("resize", onRs);
 
     const ctxR = () => ({ land: state.land || "DE", monat: state.monat, habitate: [], choices: reise.antworten });
     const ranking = () => Engine.bewerte(ctxR());
     const naechster = () => REISEN_FOLGE.find(c => !reise.antworten[c] && !reise.skip[c]) || null;
-
-    function fortschritt() {
-      return `<div class="pfad">${REISEN_FOLGE.map(c => {
-        const ch = CHARAKTERE.find(x => x.id === c);
-        const st = reise.antworten[c] ? "erl" : reise.skip[c] ? "skip" : c === naechster() ? "akt" : "";
-        return `<span class="pfadpkt ${st}" title="${esc(ch.label)}">${ch.icon}</span>`;
-      }).join("")}</div>`;
-    }
 
     function renderStep() {
       const cid = naechster();
@@ -158,7 +219,6 @@ const UI = (function () {
       const c = CHARAKTERE.find(x => x.id === cid);
       const [frage, warum] = REISE_FRAGE[cid] || [c.label, ""];
       wrap.innerHTML = `
-        ${fortschritt()}
         <section class="step glass">
           <div class="step-kopf">
             <span class="step-nr">Szene ${reise.reihenfolge.length + 1}</span>
@@ -168,10 +228,12 @@ const UI = (function () {
           <div class="antwortgrid">
             ${Object.keys(c.states).map(sid => {
               const pl = (c.plain || {})[sid] || { titel: c.states[sid], text: "" };
+              const fb = (FOTO_BEISPIELE[cid] || {})[sid] || [];
               return `<button class="antwort" data-s="${sid}">
                 <div class="antwort-vis">${Visuals.forState(cid, sid)}</div>
                 <div class="antwort-titel">${esc(pl.titel)}</div>
                 <div class="antwort-text">${esc(pl.text)}</div>
+                ${fb.length ? `<div class="fbrow">${fb.map((q, k) => `<span class="fbchip" style="--ez:${(0.3 + k * 0.18).toFixed(2)}s" data-t="${q.t}" data-f="${q.f}"><img src="assets/img/${q.f}" alt="" loading="lazy"><em>${esc(q.lab)}</em><b title="Belegbild prüfen">🛡</b></span>`).join("")}</div>` : ""}
                 <div class="antwort-fach">Fachbegriff: ${esc(c.states[sid])}</div>
               </button>`;
             }).join("")}
@@ -182,6 +244,13 @@ const UI = (function () {
             <button class="btn winzig" id="experte">🎛️ Experten-Filter</button>
           </div>
         </section>`;
+      /* Foto-Beweis-Chips: Klick = Provenanz prüfen, nicht Antwort wählen */
+      wrap.querySelectorAll(".fbchip").forEach(chp => chp.addEventListener("click", e => {
+        e.stopPropagation();
+        const t = taxon(chp.dataset.t);
+        const b = t && t.bilder.find(x => x.file === chp.dataset.f);
+        if (b) provenanzPopover(chp, b, t);
+      }));
       let locked = false;
       wrap.querySelectorAll(".antwort").forEach(b => b.addEventListener("click", () => {
         if (locked) return; locked = true;
@@ -201,6 +270,10 @@ const UI = (function () {
       wrap.querySelector("#experte").addEventListener("click", () => {
         state.choices = Object.assign({}, reise.antworten); save(); location.hash = "#/filter"; render();
       });
+      /* Kamera fliegt zur aktuellen Station, Skizze zeichnet sich, Pfad wächst */
+      const idx = REISEN_FOLGE.indexOf(cid);
+      syncBoard(idx);
+      camera(idx);
     }
 
     function renderNext() {
@@ -224,7 +297,6 @@ const UI = (function () {
       const anteil = top[0] ? top[0].anteil : 0;
       const umfang = 2 * Math.PI * 52;
       wrap.innerHTML = `
-        ${fortschritt()}
         <section class="step glass ergebnis-step">
           <div class="ringwrap">
             <svg class="ring" viewBox="0 0 120 120">
@@ -276,12 +348,15 @@ const UI = (function () {
       wrap.querySelector("#rneu").addEventListener("click", () => { resetReise(); wechsle(renderStep); });
       wrap.querySelector("#rexperte").addEventListener("click", () => { state.choices = Object.assign({}, reise.antworten); save(); location.hash = "#/filter"; render(); });
       /* Ring-Animation */
+      syncBoard(REISEN_FOLGE.length);
+      camera(REISEN_FOLGE.length);
       requestAnimationFrame(() => requestAnimationFrame(() => {
         const fg = wrap.querySelector("#ringfg");
         if (fg) { fg.style.transition = "stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1)"; fg.style.strokeDashoffset = String(umfang * (1 - Math.min(1, anteil))); }
       }));
     }
 
+    camera(0, true);
     renderStep();
     return v;
   }
@@ -595,13 +670,16 @@ const UI = (function () {
       ${t.feldTip ? `<div class="feldtip">🌿 <b>Feld-Tipp:</b> ${esc(t.feldTip)}</div>` : ""}
       <div class="doss-grid">
         <section class="panel">
-          <h2>Belegfotos <span class="hint">(🛡️ = Herkunft & Prüfung)</span></h2>
+          <h2>Belegfotos <span class="hint">(🛡️ = Herkunft & Prüfung · Profil = Leitansicht)</span></h2>
           <div class="galerie">
-            ${t.bilder.map((b, i) => `<figure class="galitem">
+            ${t.bilder.map((b, i) => [b, i]).sort((p, q) => rangAnsicht(p[0].view) - rangAnsicht(q[0].view))
+              .map(([b, i]) => `<figure class="galitem">
               <img src="assets/img/${b.file}" alt="${esc(t.name)} ${esc(b.view)}">
+              <div class="mklay">${mkDots(b.view)}</div>
               <button class="shield" data-i="${i}">🛡️</button>
               <figcaption>${esc(b.view)} · ${esc(b.specimen || "")}</figcaption></figure>`).join("") || '<p class="hint">Bewusst kein Bild: keine verifizierte Quelle gefunden.</p>'}
           </div>
+          <button class="btn winzig" id="mktoggle">🎯 Merkmals-Punkte einblenden</button>
         </section>
         <section class="panel">
           <h2>Verhältnistreue Zeichnung</h2>
@@ -656,6 +734,13 @@ const UI = (function () {
     v.querySelectorAll(".shield").forEach(sh => sh.addEventListener("click", e => {
       e.stopPropagation(); provenanzPopover(sh, t.bilder[+sh.dataset.i], t);
     }));
+    const mkt = v.querySelector("#mktoggle");
+    if (mkt) mkt.addEventListener("click", () => {
+      const gal = v.querySelector(".galerie");
+      const an = gal.classList.toggle("mk-an");
+      mkt.classList.toggle("an", an);
+      mkt.textContent = an ? "🎯 Merkmals-Punkte ausblenden" : "🎯 Merkmals-Punkte einblenden";
+    });
     v.querySelectorAll("[data-duell]").forEach(b => b.addEventListener("click", () => location.hash = "#/duell/" + b.dataset.duell));
     v.querySelector("#mitmerkmalen").addEventListener("click", () => {
       state.choices = {};
@@ -669,6 +754,22 @@ const UI = (function () {
   }
 
   /* ================= View: DUELL ================= */
+  function duellViews(A, B) {
+    const vs = ["profil", "kopf", "dorsal"].filter(vw => refBild(A, vw) && refBild(B, vw));
+    return vs.length ? vs : ["profil"];
+  }
+  function duellPane(t, vw, i) {
+    const b = refBild(t, vw) || t.bilder[0];
+    return `<section class="panel duell-pane" data-t="${t.id}">
+      <h2><i>${esc(t.name)}</i></h2>
+      <div class="syncbox"><div class="syncinner">
+        ${b ? `<img src="assets/img/${b.file}" alt="${esc(t.name)}" draggable="false"><button class="shield" title="Provenienz">🛡️</button>` : Morph.profilSVG(t.morphParams, { uid: "d" + t.id })}
+      </div><div class="mklay">${b ? mkDots(b.view) : ""}</div></div>
+      <div class="duell-mini">${Morph.profilSVG(t.morphParams, { uid: "dm" + t.id + i, w: 300, h: 190 })}</div>
+      <div class="hint duellcap">${b ? `${esc(b.view)} · ${esc(b.specimen || "")}` : "Zeichnung (kein Belegbild)"}</div>
+      <div class="badges">${statusBadge(t)}</div>
+    </section>`;
+  }
   function viewDuell(idx) {
     const i = idx === undefined || isNaN(+idx) ? 0 : +idx;
     const d = DUELLE[i] || DUELLE[0];
@@ -684,18 +785,12 @@ const UI = (function () {
         ${d.trennbar === "nein" ? "🔴 Per Foto NICHT sicher trennbar – nur Morphometrie/Messung entscheidet." :
           d.trennbar === "teilweise" ? "🟡 Mit sehr gutem Makro tendenziell trennbar – Messung empfohlen." :
           "🟢 Mit gutem Foto/Makro trennbar."}</div></div>
+      <div class="chips" id="dvchips">
+        ${duellViews(A, B).map(vw => `<button class="chip ${vw === "profil" ? "an" : ""}" data-vw="${vw}">${vw === "profil" ? "Seitenansicht" : vw === "kopf" ? "Kopf frontal" : "Dorsal"}</button>`).join("")}
+        <button class="chip" id="mkduell" title="Pulsierende Punkte zeigen, wo am Foto geschaut wird">🎯 Merkmale anzeigen</button>
+      </div>
       <div class="duell-grid" id="duellgrid">
-        ${[A, B].map(t => {
-          const b = refBild(t, "kopf") || t.bilder[0];
-          return `<section class="panel duell-pane">
-            <h2><i>${esc(t.name)}</i></h2>
-            <div class="syncbox"><div class="syncinner">
-              ${b ? `<img src="assets/img/${b.file}" alt="${esc(t.name)}" draggable="false"><button class="shield" title="Provenienz">🛡️</button>` : Morph.profilSVG(t.morphParams, { uid: "d" + t.id })}
-            </div></div>
-            <div class="duell-mini">${Morph.profilSVG(t.morphParams, { uid: "dm" + t.id + i, w: 300, h: 190 })}</div>
-            <div class="badges">${statusBadge(t)}</div>
-          </section>`;
-        }).join("")}
+        ${[A, B].map(t => duellPane(t, "profil", i)).join("")}
       </div>
       <div id="duellsync"></div>
       <section class="panel">
@@ -715,13 +810,35 @@ const UI = (function () {
         <div class="row"><button class="btn" id="zuA">Dossier ${esc(Engine.kurz(A.name))}</button>
         <button class="btn" id="zuB">Dossier ${esc(Engine.kurz(B.name))}</button></div>
       </section>`;
-    const boxes = [...v.querySelectorAll("#duellgrid .syncbox")];
-    const sync = attachSync(boxes);
-    v.querySelector("#duellsync").appendChild(sync.bar);
-    v.querySelectorAll(".shield").forEach((sh, k) => sh.addEventListener("click", e => {
-      e.stopPropagation(); const t = k === 0 ? A : B; const b = refBild(t, "kopf") || t.bilder[0];
-      if (b) provenanzPopover(sh, b, t);
+    function setupSync() {
+      const bs = [...v.querySelectorAll("#duellgrid .syncbox")];
+      const s = attachSync(bs);
+      const alt = v.querySelector("#duellsync .syncbtns"); if (alt) alt.remove();
+      v.querySelector("#duellsync").appendChild(s.bar);
+      return s;
+    }
+    setupSync();
+    function bindShields(vw) {
+      v.querySelectorAll("#duellgrid .shield").forEach((sh, k) => sh.addEventListener("click", e => {
+        e.stopPropagation(); const t = k === 0 ? A : B; const b = refBild(t, vw) || t.bilder[0];
+        if (b) provenanzPopover(sh, b, t);
+      }));
+    }
+    bindShields("profil");
+    v.querySelectorAll("#dvchips [data-vw]").forEach(ch => ch.addEventListener("click", () => {
+      const vw = ch.dataset.vw;
+      v.querySelectorAll("#dvchips [data-vw]").forEach(x => x.classList.toggle("an", x === ch));
+      const grid = v.querySelector("#duellgrid");
+      grid.innerHTML = [A, B].map(t => duellPane(t, vw, i)).join("");
+      grid.classList.toggle("mk-an", v.querySelector("#mkduell").classList.contains("an"));
+      bindShields(vw);
+      setupSync();
     }));
+    v.querySelector("#mkduell").addEventListener("click", e => {
+      const an = e.currentTarget.classList.toggle("an");
+      e.currentTarget.textContent = an ? "🎯 Merkmale ausblenden" : "🎯 Merkmale anzeigen";
+      v.querySelector("#duellgrid").classList.toggle("mk-an", an);
+    });
     v.querySelectorAll("[data-j]").forEach(ch => ch.addEventListener("click", () => location.hash = "#/duell/" + ch.dataset.j));
     v.querySelector("#zuA").addEventListener("click", () => location.hash = "#/art/" + A.id);
     v.querySelector("#zuB").addEventListener("click", () => location.hash = "#/art/" + B.id);

@@ -1,6 +1,6 @@
 # TEMNOTHEK – Quellen- & Verifikationslog
 
-Stand: 2026-11 · Version 1.0.0 · Privates, nicht-kommerzielles Projekt
+Stand: 2026-11 · Version 3.1.0 · Privates, nicht-kommerzielles Projekt
 
 ## 1. Prinzip der Bildauswahl
 
@@ -28,7 +28,9 @@ Lizenzangabe im App-Kontext, und Suchtreffer, deren Quellseite nicht zum gesucht
 | t_nylanderi_head.jpg | *T. nylanderi* | Kopf frontal | CASENT0178771 | AntWiki-Seite der Art | CC-BY 4.0 (AntWeb/CAS) | Sichtkontrolle ✔ |
 | t_nylanderi_profile.jpg | *T. nylanderi* | Profil | CASENT0178771 | AntWiki-Seite der Art | CC-BY 4.0 | Sichtkontrolle ✔ |
 | t_crassispinus_profile.jpg | *T. crassispinus* | Profil | CASENT0173198 | Wikimedia Commons (Dateiname = Beleg) | CC-BY 4.0 | Sichtkontrolle ✔ |
+| t_crassispinus_head.jpg | *T. crassispinus* | Kopf frontal | CASENT0173198 | AntWiki-Seite der Art (Bildgalerie) | CC-BY 4.0 (AntWeb/CAS) | Sichtkontrolle ✔ (0,2-mm-Skala, Frontalansicht) |
 | t_crassispinus_dorsal.jpg | *T. crassispinus* | Dorsal | CASENT0173198 | Wikimedia Commons | CC-BY 4.0 | Sichtkontrolle ✔ |
+| t_crasecundus_profile.jpg | *T. crasecundus* | Profil | Revisionsmaterial | AntWiki-Seite der Art (Tafel Seifert & Csősz 2015) | CC-BY 4.0 | Sichtkontrolle ✔ (0,5-mm-Skala, lateral, genadelt) |
 | t_crasecundus_head.jpg | *T. crasecundus* | Kopf frontal | Revisionsmaterial | AntWiki-Seite der Art | CC-BY 4.0 | Sichtkontrolle ✔ |
 | t_crasecundus_dorsal.jpg | *T. crasecundus* | Dorsal | Revisionsmaterial | AntWiki-Seite der Art | CC-BY 4.0 | Sichtkontrolle ✔ |
 | t_parvulus_profile.jpg | *T. parvulus* | Profil | CASENT0173197 | AntWiki-Seite der Art | CC-BY 4.0 | Sichtkontrolle ✔ |

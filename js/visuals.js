@@ -247,5 +247,87 @@ const Visuals = (function () {
     return "";
   }
 
-  return { forState, ant };
+  /* =========================================================================
+     v3.1 – WHITEBOARD-REISE
+     Eine große "Tafel": ein geschwungener Pfad zeichnet sich von Station zu
+     Station vor, die Kamera fliegt hinterher und zoomt je nach Detailgrad.
+     stationSketch(cid) liefert Strich-Motive (Pfade, lokale Box ~±70),
+     boardSVG() baut Tafel + Pfad + Stationsgruppen (Zeichnen rein über CSS).
+     ========================================================================= */
+  const K = (x, y, r) => `M${x - r},${y} a${r},${r} 0 1,0 ${2 * r},0 a${r},${r} 0 1,0 ${-2 * r},0`;
+  const E = (x, y, rx, ry) => `M${x - rx},${y} a${rx},${ry} 0 1,0 ${2 * rx},0 a${rx},${ry} 0 1,0 ${-2 * rx},0`;
+  const antD = o => [
+    K(o - 26, 0, 8), K(o - 9, -2, 7), E(o + 13, 0, 12, 9),
+    `M${o - 28},7 l-6,13 M${o - 10},6 l-3,13 M${o + 7},8 l4,12`
+  ];
+
+  /* Kamerazoom je Station: Detail-Motive liegen klein auf der Tafel (SKALA),
+     die Kamera zoomt heran -> Proportionen bleiben ehrlich, Lesbarkeit groß. */
+  const STATION_ZOOM = { c_nest: 1.05, c_behavior: 1.05, c_size: 1.15, c_color: 1.1, c_sculpt: 1.55, c_spine: 1.5, c_node: 1.6, c_hair: 1.5, c_gaster: 1.35, c_ant: 1.6, ziel: 1.12 };
+  const STATION_SKALA = { c_nest: 1, c_behavior: 0.9, c_size: 0.9, c_color: 0.85, c_sculpt: 0.62, c_spine: 0.62, c_node: 0.6, c_hair: 0.62, c_gaster: 0.7, c_ant: 0.6, ziel: 0.9 };
+
+  function stationSketch(cid) {
+    switch (cid) {
+      case "c_nest": return [E(0, 8, 30, 26), "M-30,2 Q0,-24 30,2", "M0,-18 L7,-38", "M-56,36 q12,-14 26,0", "M32,36 q11,-13 24,0"];
+      case "c_behavior": return antD(-34).concat(antD(30), ["M-4,-1 L10,-3"]);
+      case "c_size": return antD(-28).concat(["M8,-30 H64", "M8,-30 v9 M19,-30 v5 M30,-30 v9 M41,-30 v5 M52,-30 v9 M64,-30 v6"]);
+      case "c_color": return antD(0).concat([K(-42, 46, 8), K(-14, 46, 8), K(14, 46, 8), K(42, 46, 8)]);
+      case "c_sculpt": return [K(-4, -8, 30), "M-18,-16 q6,-4 12,0", "M-20,-4 q6,-4 12,0", "M-16,8 q6,-4 12,0", K(22, 18, 16), "M33,29 L46,42"];
+      case "c_spine": return ["M-40,16 Q-16,-18 20,-10", "M14,-10 L30,-26", "M22,-8 L38,-22", E(46, 6, 14, 10), K(-46, 10, 9)];
+      case "c_node": return ["M-34,20 L-12,-16 L0,-14 L12,22", "M-12,-16 Q-4,-25 0,-14", "M-46,22 H24", E(34, -4, 12, 9)];
+      case "c_hair": return ["M-40,20 Q0,-24 40,14", "M-28,6 l-6,-16", "M-12,-6 l-3,-17", "M6,-10 l2,-17", "M24,-2 l7,-15"];
+      case "c_gaster": return [E(0, 0, 34, 24), "M-16,-19 q5,19 0,38", "M0,-24 q5,24 0,48", "M16,-19 q5,19 0,38"];
+      case "c_ant": return ["M-40,26 Q-24,-20 0,-16", K(8, -14, 5), K(18, -11, 5), K(28, -8, 5), K(38, -5, 6)];
+      case "ziel": return ["M-8,42 V-40", "M-8,-40 L34,-30 L-8,-20", "M-22,42 H8", K(46, -34, 7)];
+    }
+    return [K(0, 0, 24)];
+  }
+
+  /* Catmull-Rom -> Bezier: Pfad läuft EXAKT durch alle Stationspunkte */
+  function pfadD(pts) {
+    let d = `M${pts[0].x},${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      const c1 = { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 };
+      const c2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 };
+      d += ` C${c1.x.toFixed(1)},${c1.y.toFixed(1)} ${c2.x.toFixed(1)},${c2.y.toFixed(1)} ${p2.x},${p2.y}`;
+    }
+    return d;
+  }
+
+  function boardSVG(liste) {
+    const STEP = 460, W = 260 + liste.length * STEP + 260, H = 640;
+    const pts = [{ x: 40, y: 360 }];
+    const st = liste.map((s, i) => {
+      const p = { x: 260 + i * STEP, y: 320 + Math.sin(i * 1.05) * 95 };
+      pts.push(p);
+      return Object.assign({ p, i }, s);
+    });
+    const zielP = { x: 260 + liste.length * STEP, y: 320 + Math.sin(liste.length * 1.05) * 95 };
+    pts.push(zielP);
+    const stations = st.concat([{ cid: "ziel", nr: "", label: "Ziel", p: zielP, i: liste.length }]);
+    const inner = stations.map(s => {
+      const sk = STATION_SKALA[s.cid] || 1;
+      const motive = stationSketch(s.cid);
+      return `<g class="station" id="st${s.i}" data-cid="${s.cid}" transform="translate(${s.p.x},${s.p.y.toFixed(1)})">
+        <g class="skgroup" transform="scale(${sk})">
+          ${motive.map((d, k) => `<path class="sk" style="--d:${(k * 0.13).toFixed(2)}s" d="${d}" fill="none" stroke="currentColor" stroke-width="${(3 / sk).toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"/>`).join("")}
+        </g>
+        ${s.nr ? `<g class="snr"><circle cx="-78" cy="-84" r="16"/><text x="-78" y="-78">${s.nr}</text></g>` : ""}
+        <text class="slab" y="118">${esc0(s.label)}</text>
+        <g class="sdone"><circle cx="78" cy="-84" r="15"/><path d="M71,-84 l5,6 l10,-12"/></g>
+        <g class="sskip"><circle cx="78" cy="-84" r="15"/><text x="78" y="-79">⏭</text></g>
+      </g>`;
+    }).join("");
+    const d = pfadD(pts);
+    const svg = `<svg id="boardsvg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" aria-label="Reise-Tafel">
+      <path class="wbguide" d="${d}" fill="none"/>
+      <path id="wbpath" d="${d}" pathLength="100" fill="none"/>
+      ${inner}
+    </svg>`;
+    return { svg, pts, W, H };
+  }
+  const esc0 = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  return { forState, ant, stationSketch, boardSVG, STATION_ZOOM, STATION_SKALA };
 })();
