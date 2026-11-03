@@ -202,3 +202,8 @@ details.panel > div { padding:6px 14px 14px; }
 .modebtn { font-size:.8rem; }
 .kontextkompakt .row { align-items:center; margin:0; }
 @media (max-width:600px){ .chip.vis { min-width:84px; } }
+
+/* v2.2 */
+.aktivitaet { width:100%; max-width:460px; color:var(--mut); }
+.herleitung { border-left:2px solid var(--accent); padding-left:6px; margin-top:3px; }
+.kontextkompakt label { min-width:96px; }

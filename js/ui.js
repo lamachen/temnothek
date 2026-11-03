@@ -15,8 +15,9 @@ const UI = (function () {
   };
   const state = Object.assign({
     region: null, habitate: [], choices: {}, theme: "dark", mode: "feld",
-    onboarded: false, qpEnde: false
+    onboarded: false, qpEnde: false, land: "DE", monat: new Date().getMonth()
   }, JSON.parse(store.get("temnothek_state") || "{}"));
+  if (state.monat === null || state.monat === undefined || state.monat === "") state.monat = new Date().getMonth();
   function save() { store.set("temnothek_state", JSON.stringify(state)); }
 
   /* Sitzungs-Foto (bewusst nicht persistent – Datenschutz & Speicher) */
@@ -128,7 +129,18 @@ const UI = (function () {
       </section>
       <section class="panel kontextkompakt">
         <div class="row">
-          <label>Fundort
+          <label>Land
+            <select id="land">
+              ${Object.entries(LAENDER).map(([k, l]) => `<option value="${k}">${esc(l.label)}</option>`).join("")}
+            </select>
+          </label>
+          <label>Monat
+            <select id="monat">
+              <option value="">– egal –</option>
+              ${MONATE.map((m, i) => `<option value="${i}">${m}</option>`).join("")}
+            </select>
+          </label>
+          <label id="regwrap">Region
             <select id="region">
               <option value="">– unbekannt –</option>
               ${Object.entries(BUNDESLAENDER).map(([k]) => `<option value="${k}">${k}</option>`).join("")}
@@ -157,12 +169,24 @@ const UI = (function () {
         <div id="ranking" class="ranking"></div>
       </section>`;
 
-    const ctx = () => ({ region: state.region ? BUNDESLAENDER[state.region] || state.region : null, habitate: state.habitate, choices: state.choices });
+    const ctx = () => ({
+      land: state.land || "DE",
+      monat: state.monat,
+      region: state.land === "DE" && state.region ? BUNDESLAENDER[state.region] || state.region : null,
+      habitate: state.habitate, choices: state.choices
+    });
 
     /* ---- Kontext ---- */
     const sel = v.querySelector("#region");
     sel.value = state.region || "";
     sel.addEventListener("change", () => { state.region = sel.value || null; save(); update(); });
+    const landSel = v.querySelector("#land"), monatSel = v.querySelector("#monat");
+    landSel.value = state.land || "DE";
+    monatSel.value = state.monat === null || state.monat === "" ? "" : String(state.monat);
+    function regSichtbar() { v.querySelector("#regwrap").style.display = (state.land || "DE") === "DE" ? "" : "none"; }
+    regSichtbar();
+    landSel.addEventListener("change", () => { state.land = landSel.value; if (state.land !== "DE") state.region = null, sel.value = ""; save(); regSichtbar(); update(); });
+    monatSel.addEventListener("change", () => { state.monat = monatSel.value === "" ? null : +monatSel.value; save(); update(); });
     v.querySelector("#habchips").addEventListener("click", e => {
       const ch = e.target.closest(".chip"); if (!ch) return;
       const id = ch.dataset.h;
@@ -252,7 +276,9 @@ const UI = (function () {
 
     v.querySelector("#resetall").addEventListener("click", () => {
       state.choices = {}; state.habitate = []; state.region = null; state.qpEnde = false;
-      save(); sel.value = ""; v.querySelectorAll("#habchips .chip").forEach(x => x.classList.remove("an")); update();
+      state.land = "DE"; state.monat = new Date().getMonth();
+      save(); sel.value = ""; landSel.value = "DE"; monatSel.value = String(state.monat); regSichtbar();
+      v.querySelectorAll("#habchips .chip").forEach(x => x.classList.remove("an")); update();
     });
 
     /* ---- Ergebnis-ins-Journal ---- */
@@ -260,8 +286,13 @@ const UI = (function () {
       if (!e.target.closest("#jquick")) return;
       const top = Engine.bewerte(ctx())[0];
       if (!("indexedDB" in window)) { alert("Journal benötigt IndexedDB – hier nicht verfügbar."); return; }
+      const herleitung = Object.entries(c.choices).map(([cid, sid]) => {
+        const ch2 = CHARAKTERE.find(x => x.id === cid);
+        return `${ch2.label}: ${ch2.states[sid]}`;
+      }).join(" · ") || "nur Fundkontext";
       openDB().then(db => putObs(db, { id: Date.now(), datum: new Date().toISOString().slice(0, 10),
         ort: "", art: top.taxon.name, sicher: "grün – stimmig",
+        herleitung: `Land ${(LAENDER[c.land] || {}).label || c.land}, Monat ${c.monat === null || c.monat === "" ? "–" : MONATE[+c.monat]} · ${herleitung}`,
         notiz: "Übernommen aus Bestimmen (Schnellpfad/Filter)", foto: sessionFoto.data }))
         .then(() => { location.hash = "#/journal"; render(); });
     });
@@ -419,9 +450,15 @@ const UI = (function () {
             <tr><td>DE-Status</td><td>${esc(t.statusText)}</td></tr>
           </table>
           <h3>Biologie</h3><p>${esc(t.biologie)}</p>
-          <h3>Regionen (DE)</h3>
+          <h3>Jahresaktivität</h3>
+          ${Morph.aktivitaetsSVG(t.aktivitaet, state.monat)}
+          <p class="hint">Balken = relative Sichtbarkeit von Arbeiterinnen je Monat${state.monat !== null && state.monat !== "" ? " · gelb = dein gewählter Monat" : ""}.</p>
+          <h3>Ländergewichte</h3>
+          <div class="regbars">${Object.entries(t.land || {}).map(([l, w]) =>
+            `<div class="regbar"><span>${(LAENDER[l] || {}).label || l}</span><div class="bar"><div style="width:${w * 100}%"></div></div><span class="num">${w.toFixed(1)}</span></div>`).join("")}</div>
+          ${(state.land || "DE") === "DE" ? `<h3>Regionen (DE)</h3>
           <div class="regbars">${Object.entries(t.region).map(([r, w]) =>
-            `<div class="regbar"><span>${REGIONEN[r].label.split(" ")[0]}</span><div class="bar"><div style="width:${w * 100}%"></div></div><span class="num">${w.toFixed(1)}</span></div>`).join("")}</div>
+            `<div class="regbar"><span>${REGIONEN[r].label.split(" ")[0]}</span><div class="bar"><div style="width:${w * 100}%"></div></div><span class="num">${w.toFixed(1)}</span></div>`).join("")}</div>` : ""}
         </section>
         <section class="panel">
           <h2>Merkmalsprofil <span class="hint">(${istLabor() ? "Labor" : "Feld"}-Modus)</span></h2>
@@ -710,7 +747,8 @@ const UI = (function () {
         k.innerHTML = `${o.foto ? `<img src="${o.foto}" alt="Fundfoto">` : ""}
           <div><div class="jdatum">${esc(o.datum)} · ${esc(o.ort || "–")}</div>
           <div class="jart"><i>${esc(o.art || "unbestimmt")}</i> <span class="badge ${o.sicher.startsWith("grün") ? "badge-heimisch" : o.sicher.startsWith("gelb") ? "badge-moeglich" : "badge-krypt"}">${esc(o.sicher)}</span></div>
-          <div class="hint">${esc(o.notiz || "")}</div></div>
+          <div class="hint">${esc(o.notiz || "")}</div>
+          ${o.herleitung ? `<div class="hint herleitung">🧭 ${esc(o.herleitung)}</div>` : ""}</div>
           <button class="btn winzig jdel">löschen</button>`;
         k.querySelector(".jdel").addEventListener("click", async () => { const db2 = await openDB(); await delObs(db2, o.id); liste(); });
         l.appendChild(k);

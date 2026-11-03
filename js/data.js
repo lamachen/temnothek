@@ -7,7 +7,7 @@
 
 const APP_META = {
   name: "TEMNOTHEK",
-  version: "1.1.0",
+  version: "1.2.0",
   stand: "2026-11",
   lizenzHinweis: "Privates, nicht-kommerzielles Projekt. Belegfotos: AntWeb / California Academy of Sciences via AntWiki & Wikimedia Commons, CC-BY 4.0."
 };
@@ -545,3 +545,51 @@ const FELDTIPPS = {
 };
 CHARAKTERE.forEach(c => { c.erklaerung = ERKLAERUNGEN[c.id] || ""; });
 TAXA.forEach(t => { t.feldTip = FELDTIPPS[t.id] || ""; });
+
+/* ---------- v2.2: Kontext-Layer Land & Jahresaktivität ---------- */
+const LAENDER = {
+  DE: { label: "Deutschland", subregion: true },
+  AT: { label: "Österreich",  subregion: false },
+  CH: { label: "Schweiz",     subregion: false }
+};
+const MONATE = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+
+/* Aktivitätskurven (Sichtbarkeit/Aktivität von Arbeiterinnen, gemäßigtes Mitteleuropa).
+   Werte 0..1 = relative Wahrscheinlichkeit, im Monat Arbeiterinnen zu beobachten.
+   Muster nach Phänologie aus Q2/Q4; wo unsicher, bewusst konservativ breit. */
+const AKTIVITAETSMUSTER = {
+  wald:      [0, 0, 0.1, 0.3, 0.7, 0.9, 1.0, 1.0, 0.8, 0.4, 0.1, 0],
+  baum:      [0, 0, 0.0, 0.2, 0.6, 0.9, 1.0, 0.9, 0.6, 0.2, 0.0, 0],
+  xerotherm: [0, 0, 0.0, 0.3, 0.7, 1.0, 1.0, 0.9, 0.5, 0.1, 0.0, 0],
+  frueh:     [0, 0, 0.2, 0.5, 0.8, 0.9, 1.0, 0.9, 0.7, 0.4, 0.1, 0],
+  breit:     [0, 0, 0.2, 0.5, 0.8, 1.0, 1.0, 1.0, 0.8, 0.5, 0.1, 0]
+};
+const LANDGEWICHTE = {
+  t_nylanderi:  { DE: 1.0, AT: 0.7, CH: 0.7 },
+  t_crassispinus:{ DE: 1.0, AT: 0.8, CH: 0.6 },
+  t_crasecundus:{ DE: 0.5, AT: 0.6, CH: 0.3 },
+  t_parvulus:   { DE: 0.6, AT: 0.8, CH: 0.7 },
+  t_affinis:    { DE: 1.0, AT: 0.9, CH: 0.9 },
+  t_saxonicus:  { DE: 0.8, AT: 0.7, CH: 0.4 },
+  t_recedens:   { DE: 0.05, AT: 1.0, CH: 0.3 },
+  t_unifasciatus:{ DE: 0.1, AT: 0.7, CH: 0.8 },
+  t_tuberum:    { DE: 0.15, AT: 0.6, CH: 0.7 },
+  l_acervorum:  { DE: 1.0, AT: 1.0, CH: 1.0 },
+  l_muscorum:   { DE: 1.0, AT: 1.0, CH: 1.0 },
+  l_fabarum:    { DE: 0.8, AT: 0.8, CH: 0.7 },
+  f_nitidulus:  { DE: 0.4, AT: 0.4, CH: 0.4 },
+  h_sublaevis:  { DE: 0.5, AT: 0.6, CH: 0.5 },
+  s_debile:     { DE: 0.7, AT: 0.6, CH: 0.6 },
+  m_schencki:   { DE: 1.0, AT: 1.0, CH: 1.0 }
+};
+const AKTIVITAET_PRO_TAXON = {
+  t_nylanderi: "wald", t_crassispinus: "wald", t_crasecundus: "wald",
+  t_parvulus: "xerotherm", t_affinis: "baum", t_saxonicus: "xerotherm",
+  t_recedens: "xerotherm", t_unifasciatus: "xerotherm", t_tuberum: "xerotherm",
+  l_acervorum: "frueh", l_muscorum: "breit", l_fabarum: "breit",
+  f_nitidulus: "baum", h_sublaevis: "wald", s_debile: "wald", m_schencki: "breit"
+};
+TAXA.forEach(t => {
+  t.land = LANDGEWICHTE[t.id] || { DE: 0.5, AT: 0.5, CH: 0.5 };
+  t.aktivitaet = AKTIVITAETSMUSTER[AKTIVITAET_PRO_TAXON[t.id] || "wald"];
+});

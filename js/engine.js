@@ -9,6 +9,11 @@ const Engine = (function () {
 
   function prior(taxon, ctx) {
     let p = 1;
+    if (ctx.land) p *= (taxon.land || {})[ctx.land] ?? 0.3;
+    if (ctx.monat !== undefined && ctx.monat !== null && ctx.monat !== "") {
+      const a = (taxon.aktivitaet || [])[+ctx.monat];
+      p *= (a === undefined ? 0.5 : Math.max(0.03, a));
+    }
     if (ctx.region) p *= (taxon.region[ctx.region] ?? 0.2);
     if (ctx.habitate && ctx.habitate.length) {
       const hs = ctx.habitate.map(h => taxon.habitat[h] ?? 0.15);

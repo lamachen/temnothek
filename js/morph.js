@@ -283,5 +283,22 @@ const Morph = (function () {
     return open + body + close;
   }
 
-  return { profilSVG, kopfSVG, anatomieSVG, rangePlotSVG, stateVis };
+  /* ---------- v2.2: Jahresaktivitäts-Leiste ---------- */
+  function aktivitaetsSVG(monate, current, opt) {
+    opt = opt || {};
+    const W = opt.w || 460, H = 74, bw = (W - 20) / 12;
+    const labels = ["J","F","M","A","M","J","J","A","S","O","N","D"];
+    let bars = "";
+    monate.forEach((v, i) => {
+      const h = 4 + v * 40;
+      const x = 10 + i * bw;
+      const cur = current !== null && current !== undefined && +current === i;
+      bars += `<rect x="${x + 2}" y="${58 - h}" width="${bw - 5}" height="${h}" rx="3"
+        fill="${cur ? "#e8b04b" : "#7fb069"}" opacity="${cur ? 1 : 0.35 + v * 0.5}"/>
+        <text x="${x + bw / 2 - 2}" y="70" font-size="9" text-anchor="middle" fill="${cur ? "#e8b04b" : "currentColor"}" opacity=".8">${labels[i]}</text>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="aktivitaet" role="img" aria-label="Jahresaktivität">${bars}</svg>`;
+  }
+
+  return { profilSVG, kopfSVG, anatomieSVG, rangePlotSVG, stateVis, aktivitaetsSVG };
 })();
