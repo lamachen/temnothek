@@ -5,11 +5,12 @@ Interaktive, visuelle Bestimmung von **Temnothorax**-Arten und ihren Lookalikes
 Fokus Deutschland + Nachbarraum.
 
 **Kein Bestimmungsbuch, sondern ein Werkzeug:**
-- 🧭 **Visuelle Reise** (Start-Ansicht) – ein **Kameraflug über eine Whiteboard-Tafel**: ein geschwungener Pfad
-  zeichnet sich von Station zu Station vor, die Kamera fliegt hinterher und zoomt an Detail-Skizzen heran
-  (Skizzen liegen proportional klein auf der Tafel, der Zoom gleicht aus). Jede Station zeichnet sich ein,
-  beantwortete Szenen bekommen ein **Echtfoto-Beleg** als Kreis-Blendung dazu. Antworten in Alltagsvergleichen
-  („wie Sandpapier“, „wie poliert“), Fachbegriff nur als Fußnote; Foto-Beweis-Chips (🛡) kombinieren Skizze + Museumsfoto.
+- 🧭 **Visuelle Reise** (Start-Ansicht) – die Bestimmung spielt AUF einer weißen Whiteboard-Tafel:
+  eine Marker-Linie zeichnet sich geschwungen von Station zu Station vor, die **Kamera fliegt hinterher**
+  und zoomt je Detailgrad heran (Detail-Skizzen liegen proportional klein auf der Tafel, der Zoom gleicht aus).
+  Fragen schreiben sich in Marker-Handschrift ein, Antworten sind **angeheftete Karten** (animierte Skizze +
+  Alltagsvergleich) mit **Echtfoto-Polaroids** (🛡 = Provenanz) direkt daran; ein Tipp = Marker-Kreis um die
+  Karte, dann fliegt die Kamera weiter. Am Ziel: Routen-Recap als Mini-Map + Stimmigkeits-Ring.
 - 🖼️ **Leitansicht Profil** – alle Arten-Karten und Duelle starten in derselben Vergleichs-Perspektive;
   Zweitansichten (Kopf/Dorsal) sitzen bewusst in Duell-Umschalter, Dossier-Galerie und Merkmal-Punkten (🎯).
 - 🎬 **Verhalten bestimmt mit** – Tandemlaufen, Einrollen, Stich-Drohen, Gast bei Waldameisen, Brutraub als eigene Szenen.

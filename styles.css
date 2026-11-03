@@ -291,64 +291,98 @@ details.panel > div { padding:6px 14px 14px; }
   .board { transition:none !important; }
   #wbpath { transition:none !important; }
   .station .sk { animation:none !important; stroke-dashoffset:0 !important; }
-  .station .slab, .fcap { animation:none !important; opacity:.85 !important; }
-  .fotoclip { animation:none !important; clip-path:circle(50% at 50% 50%) !important; }
-  .fbchip { animation:none !important; clip-path:none !important; }
+  .shead h3 { animation:none !important; clip-path:none !important; }
+  .shead p { animation:none !important; opacity:1 !important; }
+  .wbst.live .note { animation:none !important; opacity:1 !important; transform:rotate(var(--rot,0deg)) !important; }
+  .note.circled::after { animation:none !important; opacity:.9 !important; transform:rotate(-2deg) !important; }
   .mkdot { animation:none !important; }
 }
 
 /* =========================================================================
-   v3.1 – Whiteboard-Kameraflug · Foto-Beweise · Merkmals-Punkte
+   v3.2 – WHITEBOARD: die Reise spielt AUF der Tafel
+   Weisse Flaeche (echte Whiteboard-Optik in beiden Themes), Marker-Linie
+   zeichnet sich vor, Kamera fliegt hinterher; Antworten sind angeheftete
+   Karten + Polaroids auf der Tafel, Klick = Marker-Kreis.
    ========================================================================= */
-:root, [data-theme="dark"] { --board:#26221c; --boardink:#efe3cd; }
-[data-theme="light"] { --board:#f7f3ea; --boardink:#3a2d1e; }
-.kamera { position:relative; overflow:hidden; height:clamp(280px,44vh,470px); margin:10px 0 14px;
-  border-radius:18px; background:
-    radial-gradient(900px 260px at 50% -60px, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
-    repeating-linear-gradient(0deg, transparent 0 34px, color-mix(in srgb, var(--boardink) 5%, transparent) 34px 35px),
-    var(--board);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--boardink) 14%, transparent),
-    inset 0 -22px 44px color-mix(in srgb, #000 12%, transparent); }
-.kamera .board { position:absolute; top:0; left:0; transform-origin:0 0; color:var(--boardink);
-  transition: transform 1.05s cubic-bezier(.35,.75,.25,1); will-change:transform; }
-#boardsvg { display:block; }
-.wbguide { stroke:currentColor; opacity:.16; stroke-width:3; stroke-dasharray:1 11; stroke-linecap:round; }
-#wbpath { stroke:var(--accent); stroke-width:5; stroke-linecap:round; stroke-dasharray:100; stroke-dashoffset:100;
-  transition: stroke-dashoffset 1.15s cubic-bezier(.35,.75,.25,1); }
+:root, [data-theme="dark"], [data-theme="light"] {
+  --wbpaper:#fbfaf6; --wbink:#2b2833; --wbpath:#2f6fb2; --wbmut:#7c7668; }
+.kamera.wb { position:relative; overflow:hidden; height:clamp(360px,56vh,620px); margin:10px 0 14px;
+  border-radius:16px;
+  background:radial-gradient(120% 90% at 50% -20%, #ffffff 0%, var(--wbpaper) 55%, #efede6 100%);
+  box-shadow:inset 0 0 0 2px #cfcdd2, inset 0 0 60px rgb(0 0 0 / .06), 0 10px 30px rgb(0 0 0 / .28); }
+.kamera.wb::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:4;
+  background:linear-gradient(115deg, transparent 42%, rgb(255 255 255 / .55) 50%, transparent 58%);
+  mix-blend-mode:soft-light; }
+.kamera .board { position:absolute; top:0; left:0; transform-origin:0 0; color:var(--wbink);
+  transition:transform 1.05s cubic-bezier(.35,.75,.25,1); will-change:transform; }
+#boardsvg { position:absolute; inset:0; }
+.wbguide { stroke:var(--wbpath); opacity:.18; stroke-width:3; stroke-dasharray:1 12; stroke-linecap:round; }
+#wbpath { stroke:var(--wbpath); stroke-width:6; stroke-linecap:round; stroke-dasharray:100; stroke-dashoffset:100;
+  transition:stroke-dashoffset 1.15s cubic-bezier(.35,.75,.25,1); }
 .station .sk { stroke-dasharray:340; stroke-dashoffset:340; }
-.station.live .sk { animation: skdraw .85s ease forwards; animation-delay:var(--d,0s); }
+.station.live .sk { animation:skdraw .85s ease forwards; animation-delay:var(--d,0s); }
 @keyframes skdraw { to { stroke-dashoffset:0; } }
-.station .snr circle { fill:var(--accent); }
-.station .snr text { fill:#241d10; font:700 17px ui-monospace,monospace; text-anchor:middle; }
-.station .slab { fill:currentColor; opacity:0; font:600 20px system-ui,sans-serif; text-anchor:middle; }
-.station.live .slab { animation: slabin .5s .5s ease forwards; }
-@keyframes slabin { to { opacity:.88; } }
+.station .snr circle { fill:var(--wbpath); }
+.station .snr text { fill:#fff; font:700 17px ui-monospace,monospace; text-anchor:middle; }
 .station .sdone, .station .sskip { opacity:0; transition:opacity .3s .35s; }
 .station.done .sdone { opacity:1; }
 .station.skip .sskip { opacity:1; }
 .sdone circle { fill:var(--ok); }
 .sdone path { stroke:#fff; stroke-width:3.4; fill:none; stroke-linecap:round; stroke-linejoin:round; }
-.sskip circle { fill:color-mix(in srgb, var(--boardink) 35%, transparent); }
-.sskip text { fill:var(--board); font-size:13px; text-anchor:middle; }
-.fotorahmen { fill:none; stroke:var(--accent); stroke-width:4; }
-.fotoclip { clip-path:circle(0% at 50% 50%); animation:fotoin .9s .3s cubic-bezier(.22,1,.36,1) forwards; }
-@keyframes fotoin { to { clip-path:circle(50% at 50% 50%); } }
-.fcap { fill:currentColor; opacity:0; font:600 14px ui-monospace,monospace; text-anchor:middle; animation:slabin .5s .9s ease forwards; }
-.kamera-hud { position:absolute; left:12px; top:10px; z-index:2; font-size:.78rem; color:var(--txt);
-  background:color-mix(in srgb, var(--panel) 78%, transparent); padding:5px 12px; border-radius:999px;
-  backdrop-filter:blur(6px); box-shadow:0 2px 10px rgb(0 0 0 / .2); }
-/* Foto-Beweis-Chips in Antwortkarten (Medien-Kombination Skizze + Echtfoto) */
-.fbrow { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:7px; }
-.fbchip { display:inline-flex; align-items:center; gap:6px; padding:3px 9px 3px 3px; border-radius:999px;
-  background:color-mix(in srgb, var(--accent) 15%, transparent);
-  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent);
-  font-size:.66rem; cursor:zoom-in;
-  clip-path:inset(0 100% 0 0 round 999px); animation:ezin .55s var(--ez,.3s) cubic-bezier(.22,1,.36,1) forwards; }
-@keyframes ezin { to { clip-path:inset(0 0 0 0 round 999px); } }
-.fbchip img { width:30px; height:30px; border-radius:50%; object-fit:cover; }
-.fbchip em { font-style:normal; color:var(--txt); }
-.fbchip b { font-size:.72rem; }
-/* pulsierende "schau hier"-Punkte auf Belegfotos */
+.sskip circle { fill:#b9b2a6; }
+.sskip text { fill:#fff; font-size:13px; text-anchor:middle; }
+/* Station: Marker-Handschrift-Frage + angeheftete Antwortkarten */
+.wbst { position:absolute; width:450px; transform:translate(-50%,-50%); text-align:center; }
+.wbst:not(.live) .shead, .wbst:not(.live) .notes, .wbst:not(.live) .recap { visibility:hidden; }
+.shead h3 { margin:0 0 2px; color:var(--wbink);
+  font:700 23px/1.25 "Segoe Print","Bradley Hand","Comic Sans MS",cursive;
+  clip-path:inset(0 100% 0 0); }
+.wbst.live .shead h3 { animation:writein .8s .15s cubic-bezier(.3,.7,.3,1) forwards; }
+@keyframes writein { to { clip-path:inset(0 -2% 0 0); } }
+.shead p { margin:2px 0 10px; font-size:.8rem; color:var(--wbmut); opacity:0; }
+.wbst.live .shead p { animation:slabin2 .5s .7s ease forwards; }
+@keyframes slabin2 { to { opacity:1; } }
+.notes { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.note { position:relative; display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:10px 8px 8px; border:0; cursor:pointer; color:var(--wbink);
+  background:#fff; border-radius:6px;
+  box-shadow:0 2px 0 rgb(0 0 0 / .08), 0 8px 18px rgb(40 36 20 / .14);
+  transform:rotate(var(--rot,0deg)) scale(.55); opacity:0;
+  transition:opacity .3s, transform .3s, filter .3s; }
+.note::before { content:""; position:absolute; top:-9px; left:50%; width:52px; height:16px;
+  transform:translateX(-50%) rotate(-2deg);
+  background:rgb(232 176 75 / .5); box-shadow:0 1px 2px rgb(0 0 0 / .12); }
+.wbst.live .note { animation:notein .5s var(--d,.8s) cubic-bezier(.34,1.45,.64,1) forwards; }
+@keyframes notein { to { transform:rotate(var(--rot,0deg)) scale(1); opacity:1; } }
+.note:hover { transform:rotate(0deg) scale(1.04); opacity:1; }
+.note .vscene { width:100%; height:78px; }
+.ntitel { font-weight:600; font-size:.82rem; }
+.nfach { font-size:.62rem; color:var(--wbmut); }
+.note.weg { opacity:.28; filter:grayscale(.7); transform:rotate(var(--rot,0deg)) scale(.94); pointer-events:none; }
+.note.circled { opacity:1; filter:none; transform:rotate(0deg) scale(1.03); }
+.note.circled::after { content:""; position:absolute; inset:-7px -5px; pointer-events:none;
+  border:3.5px solid #d23c3c; border-radius:48% 52% 46% 54% / 52% 46% 54% 48%;
+  transform:rotate(-2deg) scale(.7); opacity:0;
+  animation:circstamp .45s .05s cubic-bezier(.34,1.5,.64,1) forwards; }
+@keyframes circstamp { to { transform:rotate(-2deg) scale(1); opacity:.9; } }
+/* Polaroid = Echtfoto-Beleg, an die Karte gepinnt (Klick = Provenanz) */
+.pol { position:absolute; top:-16px; right:-12px; width:58px; padding:4px 4px 12px; background:#fff;
+  box-shadow:0 4px 10px rgb(0 0 0 / .22); transform:rotate(var(--pr,-4deg)); cursor:zoom-in; z-index:2; }
+.pol img { display:block; width:50px; height:50px; object-fit:cover; }
+.pol b { position:absolute; right:2px; bottom:0; font-size:.6rem; }
+.pol:hover { transform:rotate(0deg) scale(1.12); }
+/* Ziel: Routen-Recap als Mini-Map */
+.wbst.ziel { width:520px; }
+.recap svg { width:100%; height:96px; }
+.recapchips { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:8px; }
+.recapchips .chip { background:#fff; color:var(--wbink); box-shadow:0 2px 6px rgb(0 0 0 / .12); }
+/* HUD + Werkzeuge auf der weissen Tafel */
+.kamera-hud { position:absolute; left:12px; top:10px; z-index:5; font-size:.78rem; color:var(--wbink);
+  background:rgb(255 255 255 / .85); padding:5px 12px; border-radius:999px;
+  box-shadow:inset 0 0 0 1px rgb(43 40 51 / .18), 0 2px 8px rgb(0 0 0 / .12); backdrop-filter:blur(4px); }
+.wb-tools { position:absolute; right:12px; bottom:10px; z-index:5; display:flex; gap:6px; }
+.wb-tools .btn { background:rgb(255 255 255 / .92); color:var(--wbink); border-color:rgb(43 40 51 / .25); }
+/* pulsierende "schau hier"-Punkte auf Belegfotos (Duell/Dossier) */
 .mklay { position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .35s; z-index:3; }
 .mk-an .mklay { opacity:1; }
 .mkdot { position:absolute; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%;

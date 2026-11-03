@@ -1,5 +1,5 @@
 /* TEMNOTHEK Service Worker – Offline-Shell + Bilder */
-const CACHE = "temnothek-v5";
+const CACHE = "temnothek-v6";
 const SHELL = ["./", "index.html", "styles.css", "js/data.js", "js/morph.js", "js/engine.js", "js/ui.js", "manifest.webmanifest"];
 
 self.addEventListener("install", e => {

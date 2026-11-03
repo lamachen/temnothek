@@ -314,7 +314,6 @@ const Visuals = (function () {
           ${motive.map((d, k) => `<path class="sk" style="--d:${(k * 0.13).toFixed(2)}s" d="${d}" fill="none" stroke="currentColor" stroke-width="${(3 / sk).toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"/>`).join("")}
         </g>
         ${s.nr ? `<g class="snr"><circle cx="-78" cy="-84" r="16"/><text x="-78" y="-78">${s.nr}</text></g>` : ""}
-        <text class="slab" y="118">${esc0(s.label)}</text>
         <g class="sdone"><circle cx="78" cy="-84" r="15"/><path d="M71,-84 l5,6 l10,-12"/></g>
         <g class="sskip"><circle cx="78" cy="-84" r="15"/><text x="78" y="-79">⏭</text></g>
       </g>`;
@@ -325,7 +324,7 @@ const Visuals = (function () {
       <path id="wbpath" d="${d}" pathLength="100" fill="none"/>
       ${inner}
     </svg>`;
-    return { svg, pts, W, H };
+    return { svg, pts, W, H, d };
   }
   const esc0 = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 

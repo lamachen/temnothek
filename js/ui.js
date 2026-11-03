@@ -148,62 +148,115 @@ const UI = (function () {
     if (reiseCleanup) { reiseCleanup(); reiseCleanup = null; }
     const v = el("div", "view reiseview");
     v.innerHTML = `<div class="reise-bg" aria-hidden="true"></div>
-      <div class="kamera" id="kamera"><div class="board" id="board"></div>
-        <div class="kamera-hud" id="khud"></div></div>
+      <div class="kamera wb" id="kamera">
+        <div class="board" id="board"></div>
+        <div class="kamera-hud" id="khud"></div>
+        <div class="wb-tools">
+          <button class="btn winzig" id="zurueck">← zurück</button>
+          <button class="btn winzig" id="skip">weiß ich nicht ⏭</button>
+          <button class="btn winzig" id="experte">🎛️ Filter</button>
+        </div>
+      </div>
       <div id="stepwrap"></div>`;
     const wrap = v.querySelector("#stepwrap");
     const kamera = v.querySelector("#kamera");
-
-    /* ---- Whiteboard-Tafel: EIN Svg, Pfad zeichnet sich vor, Kamera fliegt hinterher ---- */
-    const B = Visuals.boardSVG(REISEN_FOLGE.map((cid, i) => ({ cid, nr: i + 1, label: (CHARAKTERE.find(x => x.id === cid) || {}).label || cid })));
     const board = v.querySelector("#board");
+
+    /* ---- Whiteboard: EINE weisse Flaeche. Linien-Ebene (Svg) + angeheftete
+       Karten/Polaroids (Html) liegen GEMEINSAM auf der Tafel; die Kamera
+       fliegt ueber beides und zoomt je Detailgrad heran. ---- */
+    const B = Visuals.boardSVG(REISEN_FOLGE.map((cid, i) => ({ cid, nr: i + 1, label: cid })));
+    board.style.width = B.W + "px";
+    board.style.height = B.H + "px";
     board.innerHTML = B.svg;
+
+    function noteHTML(cid, sid, k) {
+      const c = CHARAKTERE.find(x => x.id === cid);
+      const pl = (c.plain || {})[sid] || { titel: c.states[sid], text: "" };
+      const fb = (FOTO_BEISPIELE[cid] || {})[sid] || [];
+      return `<button class="note${fb.length ? " mitfoto" : ""}" data-s="${sid}" style="--d:${(0.8 + k * 0.14).toFixed(2)}s;--rot:${(k % 2 ? -1.3 : 1.1)}deg">
+        <span class="nvis">${Visuals.forState(cid, sid)}</span>
+        ${fb.slice(0, 2).map((q, j) => `<span class="pol" data-t="${q.t}" data-f="${q.f}" style="--pr:${j ? 4 : -5}deg" title="Echtes Belegbild – Klick zeigt Herkunft & Prüfung"><img src="assets/img/${q.f}" alt="${esc(q.lab)}" loading="lazy"><b>🛡</b></span>`).join("")}
+        <span class="ntitel">${esc(pl.titel)}</span>
+        <span class="nfach">${esc(c.states[sid])}</span>
+      </button>`;
+    }
+    board.innerHTML += REISEN_FOLGE.map((cid, i) => {
+      const c = CHARAKTERE.find(x => x.id === cid);
+      const [frage, warum] = REISE_FRAGE[cid] || [c.label, ""];
+      const p = B.pts[i + 1];
+      return `<div class="wbst" id="wst${i}" style="left:${p.x}px;top:${p.y}px">
+        <div class="shead"><h3>${esc(frage)}</h3><p>${esc(warum)}</p></div>
+        <div class="notes">${Object.keys(c.states).map((sid, k) => noteHTML(cid, sid, k)).join("")}</div>
+      </div>`;
+    }).join("") + `<div class="wbst ziel" id="wst10" style="left:${B.pts[11].x}px;top:${B.pts[11].y}px">
+      <div class="shead"><h3>Geschafft – deine Route auf einen Blick:</h3></div>
+      <div class="recap" id="recap"></div>
+    </div>`;
+
+    const wst = i => board.querySelector("#wst" + i);
+    /* Referenzen NACH dem finalen innerHTML-Schreiben holen (sonst stale) */
+    const svgG = {};
+    REISEN_FOLGE.concat(["ziel"]).forEach((cid, i) => { svgG[i] = board.querySelector("#st" + i); });
     const wbpath = board.querySelector("#wbpath");
-    const stations = [...board.querySelectorAll(".station")];
-    let curIdx = 0;
+    let curIdx = 0, lock = false;
 
     function camera(i, sofort) {
       curIdx = i;
       const cid = i < REISEN_FOLGE.length ? REISEN_FOLGE[i] : "ziel";
       const z = Visuals.STATION_ZOOM[cid] || 1.05;
       const p = B.pts[i + 1] || B.pts[B.pts.length - 1];
-      const kw = kamera.clientWidth || 640, kh = kamera.clientHeight || 380;
+      const kw = kamera.clientWidth || 640, kh = kamera.clientHeight || 420;
       if (sofort) board.style.transition = "none";
       board.style.transform = `translate(${(kw / 2 - z * p.x).toFixed(1)}px, ${(kh / 2 - z * p.y).toFixed(1)}px) scale(${z})`;
       if (sofort) requestAnimationFrame(() => { board.style.transition = ""; });
-      /* der Pfad zeichnet sich synchron zur Kamera bis zur aktuellen Station vor */
-      const frac = (i + 1) / (B.pts.length - 1);
-      wbpath.style.strokeDashoffset = String(100 - 100 * frac);
+      /* Marker-Linie zeichnet sich synchron zum Flug bis zur Station vor */
+      wbpath.style.strokeDashoffset = String(100 - 100 * ((i + 1) / (B.pts.length - 1)));
       const ch = CHARAKTERE.find(x => x.id === cid);
       v.querySelector("#khud").innerHTML = cid === "ziel"
-        ? `🏁 <b>Ziel erreicht</b> · alle ${REISEN_FOLGE.length} Szenen liegen auf der Tafel`
+        ? `🏁 <b>Ziel</b> · Route vollständig gezeichnet`
         : `🧭 Szene <b>${i + 1}/${REISEN_FOLGE.length}</b> · ${esc(ch ? ch.label : "")}`;
     }
 
+    function fillRecap() {
+      const rc = board.querySelector("#recap");
+      if (!rc || rc.dataset.fill) return;
+      rc.dataset.fill = "1";
+      rc.innerHTML = `<svg viewBox="0 0 ${B.W} ${B.H}" preserveAspectRatio="xMidYMid meet" aria-label="Deine Route">
+        <path d="${B.d}" fill="none" stroke="var(--wbpath)" stroke-width="14" stroke-linecap="round" opacity=".9"/>
+        ${REISEN_FOLGE.map((cid, i) => {
+          const p = B.pts[i + 1];
+          const ant = reise.antworten[cid], skp = reise.skip[cid];
+          return `<circle cx="${p.x}" cy="${p.y.toFixed(1)}" r="26" fill="${ant ? "var(--ok)" : skp ? "#9a938a" : "#fff"}" stroke="var(--wbpath)" stroke-width="8"/>
+            <text x="${p.x}" y="${(+p.y + 10).toFixed(1)}" text-anchor="middle" font-size="30" fill="#fff" font-family="ui-monospace,monospace">${i + 1}</text>`;
+        }).join("")}
+      </svg>
+      <div class="recapchips">${reise.reihenfolge.map(cid => {
+        const c = CHARAKTERE.find(x => x.id === cid);
+        const pl = (c.plain || {})[reise.antworten[cid]] || {};
+        return `<span class="chip kleinstatic">${c.icon} ${esc(pl.titel || reise.antworten[cid])}</span>`;
+      }).join("")}</div>`;
+    }
+
     function syncBoard(i) {
-      stations.forEach((stG, j) => {
+      for (let j = 0; j <= REISEN_FOLGE.length; j++) {
         const cid = REISEN_FOLGE[j];
         const ant = cid ? reise.antworten[cid] : null;
-        const skip = cid ? reise.skip[cid] : null;
+        const skp = cid ? reise.skip[cid] : null;
         const live = j <= i;
-        const war = stG.classList.contains("live");
-        stG.classList.toggle("live", live);
-        if (!live && war) stG.querySelectorAll(".fotoclip, .fotorahmen, .fcap").forEach(n => n.remove());
-        stG.classList.toggle("done", !!ant);
-        stG.classList.toggle("skip", !!skip && !ant);
-        if (ant && cid && !stG.querySelector(".fotoclip")) {
-          const chips = (FOTO_BEISPIELE[cid] || {})[ant] || [];
-          const ch0 = chips[0];
-          if (ch0) {
-            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            g.innerHTML = `<circle class="fotorahmen" cx="88" cy="-4" r="56"/>
-              <image class="fotoclip" href="assets/img/${ch0.f}" xlink:href="assets/img/${ch0.f}" x="36" y="-56" width="104" height="104" preserveAspectRatio="xMidYMid slice"/>
-              <text class="fcap" x="88" y="70">${esc(ch0.lab)}</text>`;
-            stG.appendChild(g);
-          }
+        svgG[j].classList.toggle("live", live);
+        wst(j).classList.toggle("live", live);
+        svgG[j].classList.toggle("done", !!ant);
+        svgG[j].classList.toggle("skip", !!skp && !ant);
+        wst(j).classList.toggle("done", !!ant);
+        wst(j).classList.toggle("skippen", !!skp && !ant);
+        if (!ant && j < REISEN_FOLGE.length) {
+          const w = wst(j);
+          w.classList.remove("settled");
+          w.querySelectorAll(".note").forEach(n => n.classList.remove("circled", "weg"));
         }
-        if (!ant) stG.querySelectorAll(".fotoclip, .fotorahmen, .fcap").forEach(n => n.remove());
-      });
+      }
+      if (i >= REISEN_FOLGE.length) fillRecap();
     }
     const onRs = () => camera(curIdx, true);
     window.addEventListener("resize", onRs);
@@ -213,82 +266,66 @@ const UI = (function () {
     const ranking = () => Engine.bewerte(ctxR());
     const naechster = () => REISEN_FOLGE.find(c => !reise.antworten[c] && !reise.skip[c]) || null;
 
-    function renderStep() {
-      const cid = naechster();
-      if (!cid) return renderErgebnis(true);
-      const c = CHARAKTERE.find(x => x.id === cid);
-      const [frage, warum] = REISE_FRAGE[cid] || [c.label, ""];
-      wrap.innerHTML = `
-        <section class="step glass">
-          <div class="step-kopf">
-            <span class="step-nr">Szene ${reise.reihenfolge.length + 1}</span>
-            <h2>${esc(frage)}</h2>
-            <p class="step-warum">${esc(warum)}</p>
-          </div>
-          <div class="antwortgrid">
-            ${Object.keys(c.states).map(sid => {
-              const pl = (c.plain || {})[sid] || { titel: c.states[sid], text: "" };
-              const fb = (FOTO_BEISPIELE[cid] || {})[sid] || [];
-              return `<button class="antwort" data-s="${sid}">
-                <div class="antwort-vis">${Visuals.forState(cid, sid)}</div>
-                <div class="antwort-titel">${esc(pl.titel)}</div>
-                <div class="antwort-text">${esc(pl.text)}</div>
-                ${fb.length ? `<div class="fbrow">${fb.map((q, k) => `<span class="fbchip" style="--ez:${(0.3 + k * 0.18).toFixed(2)}s" data-t="${q.t}" data-f="${q.f}"><img src="assets/img/${q.f}" alt="" loading="lazy"><em>${esc(q.lab)}</em><b title="Belegbild prüfen">🛡</b></span>`).join("")}</div>` : ""}
-                <div class="antwort-fach">Fachbegriff: ${esc(c.states[sid])}</div>
-              </button>`;
-            }).join("")}
-          </div>
-          <div class="step-fuss">
-            ${reise.reihenfolge.length ? `<button class="btn winzig" id="zurueck">← zurück</button>` : `<button class="btn winzig" id="zurueck" style="visibility:hidden">.</button>`}
-            <button class="btn winzig" id="skip">weiß ich nicht ⏭</button>
-            <button class="btn winzig" id="experte">🎛️ Experten-Filter</button>
-          </div>
-        </section>`;
-      /* Foto-Beweis-Chips: Klick = Provenanz prüfen, nicht Antwort wählen */
-      wrap.querySelectorAll(".fbchip").forEach(chp => chp.addEventListener("click", e => {
-        e.stopPropagation();
-        const t = taxon(chp.dataset.t);
-        const b = t && t.bilder.find(x => x.file === chp.dataset.f);
-        if (b) provenanzPopover(chp, b, t);
-      }));
-      let locked = false;
-      wrap.querySelectorAll(".antwort").forEach(b => b.addEventListener("click", () => {
-        if (locked) return; locked = true;
-        b.classList.add("picked");
-        setTimeout(() => {
-          reise.antworten[cid] = b.dataset.s;
-          if (!reise.reihenfolge.includes(cid)) reise.reihenfolge.push(cid);
-          wechsle(renderNext);
-        }, 240);
-      }));
-      wrap.querySelector("#skip").addEventListener("click", () => { reise.skip[cid] = true; wechsle(renderNext); });
-      wrap.querySelector("#zurueck").addEventListener("click", () => {
-        const last = reise.reihenfolge.pop();
-        if (last) delete reise.antworten[last]; else { const l = REISEN_FOLGE.filter(c => reise.skip[c]).pop(); if (l) delete reise.skip[l]; }
-        wechsle(renderStep);
-      });
-      wrap.querySelector("#experte").addEventListener("click", () => {
-        state.choices = Object.assign({}, reise.antworten); save(); location.hash = "#/filter"; render();
-      });
-      /* Kamera fliegt zur aktuellen Station, Skizze zeichnet sich, Pfad wächst */
-      const idx = REISEN_FOLGE.indexOf(cid);
+    function weiter() {
+      const r = ranking();
+      const amp = Engine.ampel(r, ctxR());
+      if ((amp.stufe === "gruen" || r[0].anteil >= 0.55) && reise.reihenfolge.length >= 2) return renderErgebnis(false);
+      const nx = naechster();
+      if (!nx) return renderErgebnis(true);
+      const idx = REISEN_FOLGE.indexOf(nx);
       syncBoard(idx);
       camera(idx);
     }
 
-    function renderNext() {
-      const r = ranking();
-      const amp = Engine.ampel(r, ctxR());
-      const sicher = amp.stufe === "gruen" || r[0].anteil >= 0.55;
-      if (sicher && reise.reihenfolge.length >= 2) return renderErgebnis(false);
-      renderStep();
-    }
+    /* Angeheftete Karten antippen = Marker-Kreis + Kamera fliegt weiter.
+       Polaroids (Echtfotos) oeffnen stattdessen die Provenanz. */
+    board.addEventListener("click", e => {
+      const pol = e.target.closest(".pol");
+      if (pol) {
+        e.stopPropagation(); e.preventDefault();
+        const t = taxon(pol.dataset.t);
+        const b = t && t.bilder.find(x => x.file === pol.dataset.f);
+        if (b) provenanzPopover(pol, b, t);
+        return;
+      }
+      const note = e.target.closest(".note");
+      if (!note || lock) return;
+      const w = note.closest(".wbst");
+      if (!w.classList.contains("live") || w.classList.contains("settled")) return;
+      lock = true;
+      const i = +w.id.slice(3);
+      const cid = REISEN_FOLGE[i];
+      note.classList.add("circled");
+      w.classList.add("settled");
+      w.querySelectorAll(".note").forEach(n => { if (n !== note) n.classList.add("weg"); });
+      setTimeout(() => {
+        lock = false;
+        reise.antworten[cid] = note.dataset.s;
+        if (!reise.reihenfolge.includes(cid)) reise.reihenfolge.push(cid);
+        weiter();
+      }, 430);
+    });
 
-    function wechsle(build) {
-      const step = wrap.querySelector(".step") || wrap;
-      step.classList.add("exit-l");
-      setTimeout(() => { step.classList.remove("exit-l"); build(); const n = wrap.querySelector(".step"); if (n) { n.classList.add("enter-r"); requestAnimationFrame(() => n.classList.remove("enter-r")); } }, 230);
-    }
+    v.querySelector("#zurueck").addEventListener("click", () => {
+      if (lock) return;
+      const last = reise.reihenfolge.pop();
+      if (last) delete reise.antworten[last];
+      else { const l = REISEN_FOLGE.filter(c => reise.skip[c]).pop(); if (l) delete reise.skip[l]; }
+      const nx = naechster();
+      const idx = nx ? REISEN_FOLGE.indexOf(nx) : 0;
+      wrap.innerHTML = "";
+      syncBoard(idx);
+      camera(idx);
+    });
+    v.querySelector("#skip").addEventListener("click", () => {
+      if (lock) return;
+      const cid = REISEN_FOLGE[curIdx];
+      if (cid && !reise.antworten[cid]) reise.skip[cid] = true;
+      weiter();
+    });
+    v.querySelector("#experte").addEventListener("click", () => {
+      state.choices = Object.assign({}, reise.antworten); save(); location.hash = "#/filter"; render();
+    });
 
     function renderErgebnis(complete) {
       const r = ranking();
@@ -345,7 +382,11 @@ const UI = (function () {
           herleitung: `Visuelle Reise · ${herl}`, notiz: "", foto: sessionFoto.data });
         location.hash = "#/journal"; render();
       });
-      wrap.querySelector("#rneu").addEventListener("click", () => { resetReise(); wechsle(renderStep); });
+      wrap.querySelector("#rneu").addEventListener("click", () => {
+        resetReise();
+        const rc = board.querySelector("#recap"); rc.innerHTML = ""; delete rc.dataset.fill;
+        wrap.innerHTML = ""; syncBoard(0); camera(0);
+      });
       wrap.querySelector("#rexperte").addEventListener("click", () => { state.choices = Object.assign({}, reise.antworten); save(); location.hash = "#/filter"; render(); });
       /* Ring-Animation */
       syncBoard(REISEN_FOLGE.length);
@@ -356,8 +397,8 @@ const UI = (function () {
       }));
     }
 
+    syncBoard(0);
     camera(0, true);
-    renderStep();
     return v;
   }
 
