@@ -148,7 +148,9 @@ const UI = (function () {
     if (reiseCleanup) { reiseCleanup(); reiseCleanup = null; }
     const v = el("div", "view reiseview");
     v.innerHTML = `<div class="reise-bg" aria-hidden="true"></div>
-      <div class="kamera wb" id="kamera">
+      <div class="kamera pan" id="kamera">
+        <div class="plyr" id="plyrF"></div>
+        <div class="plyr" id="plyrM"></div>
         <div class="board" id="board"></div>
         <div class="kamera-hud" id="khud"></div>
         <div class="wb-tools">
@@ -161,81 +163,65 @@ const UI = (function () {
     const wrap = v.querySelector("#stepwrap");
     const kamera = v.querySelector("#kamera");
     const board = v.querySelector("#board");
+    const plyF = v.querySelector("#plyrF"), plyM = v.querySelector("#plyrM");
+    plyF.innerHTML = Scenes.panoramaFar();
+    plyM.innerHTML = Scenes.panoramaMid();
 
-    /* ---- Whiteboard: EINE weisse Flaeche. Linien-Ebene (Svg) + angeheftete
-       Karten/Polaroids (Html) liegen GEMEINSAM auf der Tafel; die Kamera
-       fliegt ueber beides und zoomt je Detailgrad heran. ---- */
+    /* Geometrie (Pfadpunkte) aus dem Board-Modul, Landschaft aus der Szenen-Welt */
     const B = Visuals.boardSVG(REISEN_FOLGE.map((cid, i) => ({ cid, nr: i + 1, label: cid })));
     board.style.width = B.W + "px";
     board.style.height = B.H + "px";
-    board.innerHTML = B.svg;
-
-    function noteHTML(cid, sid, k) {
-      const c = CHARAKTERE.find(x => x.id === cid);
-      const pl = (c.plain || {})[sid] || { titel: c.states[sid], text: "" };
-      const fb = (FOTO_BEISPIELE[cid] || {})[sid] || [];
-      return `<button class="note${fb.length ? " mitfoto" : ""}" data-s="${sid}" style="--d:${(0.8 + k * 0.14).toFixed(2)}s;--rot:${(k % 2 ? -1.3 : 1.1)}deg">
-        <span class="nvis">${Visuals.forState(cid, sid)}</span>
-        ${fb.slice(0, 2).map((q, j) => `<span class="pol" data-t="${q.t}" data-f="${q.f}" style="--pr:${j ? 4 : -5}deg" title="Echtes Belegbild – Klick zeigt Herkunft & Prüfung"><img src="assets/img/${q.f}" alt="${esc(q.lab)}" loading="lazy"><b>🛡</b></span>`).join("")}
-        <span class="ntitel">${esc(pl.titel)}</span>
-        <span class="nfach">${esc(c.states[sid])}</span>
-      </button>`;
-    }
-    board.innerHTML += REISEN_FOLGE.map((cid, i) => {
-      const c = CHARAKTERE.find(x => x.id === cid);
-      const [frage, warum] = REISE_FRAGE[cid] || [c.label, ""];
-      const p = B.pts[i + 1];
-      return `<div class="wbst" id="wst${i}" style="left:${p.x}px;top:${p.y}px">
-        <div class="shead"><h3>${esc(frage)}</h3><p>${esc(warum)}</p></div>
-        <div class="notes">${Object.keys(c.states).map((sid, k) => noteHTML(cid, sid, k)).join("")}</div>
-      </div>`;
-    }).join("") + `<div class="wbst ziel" id="wst10" style="left:${B.pts[11].x}px;top:${B.pts[11].y}px">
-      <div class="shead"><h3>Geschafft – deine Route auf einen Blick:</h3></div>
-      <div class="recap" id="recap"></div>
-    </div>`;
-
+    board.innerHTML = Scenes.groundStrip(B.W) +
+      `<svg class="trailsvg" viewBox="0 0 ${B.W} ${B.H}" width="${B.W}" height="${B.H}" style="position:absolute;inset:0" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path id="trailguide" d="${B.d}" fill="none"/>
+        <path id="trail" d="${B.d}" pathLength="100" fill="none"/>
+      </svg>` +
+      REISEN_FOLGE.map((cid, i) => {
+        const p = B.pts[i + 1];
+        return `<div class="tstation" id="wst${i}" style="left:${p.x}px;top:${(p.y - 221).toFixed(1)}px">${Scenes.tableau(cid)}</div>`;
+      }).join("") +
+      `<div class="tstation ziel" id="wst10" style="left:${B.pts[11].x}px;top:${(B.pts[11].y - 221).toFixed(1)}px">${Scenes.tableau("ziel")}</div>`;
+    const trail = board.querySelector("#trail");
     const wst = i => board.querySelector("#wst" + i);
-    /* Referenzen NACH dem finalen innerHTML-Schreiben holen (sonst stale) */
-    const svgG = {};
-    REISEN_FOLGE.concat(["ziel"]).forEach((cid, i) => { svgG[i] = board.querySelector("#st" + i); });
-    const wbpath = board.querySelector("#wbpath");
     let curIdx = 0, lock = false;
 
+    /* Kameraflug mit Parallax: Ferne/Mitte reisen langsamer als die Vordergrund-Ebene */
+    const LAYERS = [[plyF, 0.42, 0.94, -0.10], [plyM, 0.7, 0.97, -0.02]];
     function camera(i, sofort) {
       curIdx = i;
       const cid = i < REISEN_FOLGE.length ? REISEN_FOLGE[i] : "ziel";
       const z = Visuals.STATION_ZOOM[cid] || 1.05;
       const p = B.pts[i + 1] || B.pts[B.pts.length - 1];
-      const kw = kamera.clientWidth || 640, kh = kamera.clientHeight || 420;
-      if (sofort) board.style.transition = "none";
-      board.style.transform = `translate(${(kw / 2 - z * p.x).toFixed(1)}px, ${(kh / 2 - z * p.y).toFixed(1)}px) scale(${z})`;
-      if (sofort) requestAnimationFrame(() => { board.style.transition = ""; });
-      /* Marker-Linie zeichnet sich synchron zum Flug bis zur Station vor */
-      wbpath.style.strokeDashoffset = String(100 - 100 * ((i + 1) / (B.pts.length - 1)));
+      const kw = kamera.clientWidth || 640, kh = kamera.clientHeight || 460;
+      const setT = (elm, tr) => {
+        if (sofort) elm.style.transition = "none";
+        elm.style.transform = tr;
+        if (sofort) requestAnimationFrame(() => { elm.style.transition = ""; });
+      };
+      setT(board, `translate(${(kw / 2 - z * p.x).toFixed(1)}px, ${(kh / 2 - z * (p.y + 40)).toFixed(1)}px) scale(${z})`);
+      for (const [elm, f, zf, off] of LAYERS)
+        setT(elm, `translate(${(kw / 2 - zf * p.x * f).toFixed(1)}px, ${(kh / 2 - zf * p.y * f + kh * off).toFixed(1)}px) scale(${zf})`);
+      /* Ameisen-Pfad (Trittspuren) zeichnet sich vor die Kamera */
+      trail.style.strokeDashoffset = String(100 - 100 * ((i + 1) / (B.pts.length - 1)));
       const ch = CHARAKTERE.find(x => x.id === cid);
       v.querySelector("#khud").innerHTML = cid === "ziel"
-        ? `🏁 <b>Ziel</b> · Route vollständig gezeichnet`
+        ? `🏁 <b>Ziel</b> · deine Route ist vollständig`
         : `🧭 Szene <b>${i + 1}/${REISEN_FOLGE.length}</b> · ${esc(ch ? ch.label : "")}`;
     }
 
     function fillRecap() {
-      const rc = board.querySelector("#recap");
-      if (!rc || rc.dataset.fill) return;
-      rc.dataset.fill = "1";
-      rc.innerHTML = `<svg viewBox="0 0 ${B.W} ${B.H}" preserveAspectRatio="xMidYMid meet" aria-label="Deine Route">
-        <path d="${B.d}" fill="none" stroke="var(--wbpath)" stroke-width="14" stroke-linecap="round" opacity=".9"/>
-        ${REISEN_FOLGE.map((cid, i) => {
-          const p = B.pts[i + 1];
+      const slot = board.querySelector("#recapSlot");
+      if (!slot || slot.dataset.fill) return;
+      slot.dataset.fill = "1";
+      slot.innerHTML = `<svg x="-132" y="-52" width="264" height="118" viewBox="0 0 ${B.W} ${B.H}">
+        <path d="${B.d}" fill="none" stroke="${Scenes.PAL.accent}" stroke-width="16" stroke-linecap="round" opacity=".85"/>
+        ${REISEN_FOLGE.map((cid, j) => {
+          const q = B.pts[j + 1];
           const ant = reise.antworten[cid], skp = reise.skip[cid];
-          return `<circle cx="${p.x}" cy="${p.y.toFixed(1)}" r="26" fill="${ant ? "var(--ok)" : skp ? "#9a938a" : "#fff"}" stroke="var(--wbpath)" stroke-width="8"/>
-            <text x="${p.x}" y="${(+p.y + 10).toFixed(1)}" text-anchor="middle" font-size="30" fill="#fff" font-family="ui-monospace,monospace">${i + 1}</text>`;
+          return `<circle cx="${q.x}" cy="${q.y.toFixed(1)}" r="30" fill="${ant ? Scenes.PAL.leaf2 : skp ? "#9a938a" : "#fff"}" stroke="${Scenes.PAL.accent}" stroke-width="9"/>
+            <text x="${q.x}" y="${(+q.y + 11).toFixed(1)}" text-anchor="middle" font-size="34" fill="#fff" font-family="ui-monospace,monospace">${j + 1}</text>`;
         }).join("")}
-      </svg>
-      <div class="recapchips">${reise.reihenfolge.map(cid => {
-        const c = CHARAKTERE.find(x => x.id === cid);
-        const pl = (c.plain || {})[reise.antworten[cid]] || {};
-        return `<span class="chip kleinstatic">${c.icon} ${esc(pl.titel || reise.antworten[cid])}</span>`;
-      }).join("")}</div>`;
+      </svg>`;
     }
 
     function syncBoard(i) {
@@ -243,17 +229,13 @@ const UI = (function () {
         const cid = REISEN_FOLGE[j];
         const ant = cid ? reise.antworten[cid] : null;
         const skp = cid ? reise.skip[cid] : null;
-        const live = j <= i;
-        svgG[j].classList.toggle("live", live);
-        wst(j).classList.toggle("live", live);
-        svgG[j].classList.toggle("done", !!ant);
-        svgG[j].classList.toggle("skip", !!skp && !ant);
-        wst(j).classList.toggle("done", !!ant);
-        wst(j).classList.toggle("skippen", !!skp && !ant);
-        if (!ant && j < REISEN_FOLGE.length) {
-          const w = wst(j);
+        const w = wst(j);
+        w.classList.toggle("live", j <= i);
+        w.classList.toggle("done", !!ant);
+        w.classList.toggle("skippen", !!skp && !ant);
+        if (!ant) {
           w.classList.remove("settled");
-          w.querySelectorAll(".note").forEach(n => n.classList.remove("circled", "weg"));
+          w.querySelectorAll(".opt").forEach(n => n.classList.remove("chosen", "dim"));
         }
       }
       if (i >= REISEN_FOLGE.length) fillRecap();
@@ -277,10 +259,11 @@ const UI = (function () {
       camera(idx);
     }
 
-    /* Angeheftete Karten antippen = Marker-Kreis + Kamera fliegt weiter.
-       Polaroids (Echtfotos) oeffnen stattdessen die Provenanz. */
+    /* Antwort = Akteur/Objekt IN der Szene antippen: handgezeichneter Ring
+      legt sich darum, Uebrige treten zurueck, Kamera fliegt weiter.
+      Foto-Abzaege (pol2) oeffnen stattdessen die Provenanz. */
     board.addEventListener("click", e => {
-      const pol = e.target.closest(".pol");
+      const pol = e.target.closest(".pol2");
       if (pol) {
         e.stopPropagation(); e.preventDefault();
         const t = taxon(pol.dataset.t);
@@ -288,22 +271,29 @@ const UI = (function () {
         if (b) provenanzPopover(pol, b, t);
         return;
       }
-      const note = e.target.closest(".note");
-      if (!note || lock) return;
-      const w = note.closest(".wbst");
+      const o = e.target.closest(".opt");
+      if (!o || lock) return;
+      const w = o.closest(".tstation");
       if (!w.classList.contains("live") || w.classList.contains("settled")) return;
       lock = true;
       const i = +w.id.slice(3);
       const cid = REISEN_FOLGE[i];
-      note.classList.add("circled");
+      let bb;
+      try { bb = o.getBBox(); } catch (err) { bb = { x: -90, y: -90, width: 180, height: 180 }; }
+      const rc = o.querySelector(".ringc");
+      rc.setAttribute("cx", (bb.x + bb.width / 2).toFixed(1));
+      rc.setAttribute("cy", (bb.y + bb.height / 2).toFixed(1));
+      rc.setAttribute("rx", (bb.width / 2 + 12).toFixed(1));
+      rc.setAttribute("ry", (bb.height / 2 + 12).toFixed(1));
+      o.classList.add("chosen");
       w.classList.add("settled");
-      w.querySelectorAll(".note").forEach(n => { if (n !== note) n.classList.add("weg"); });
+      w.querySelectorAll(".opt").forEach(n => { if (n !== o) n.classList.add("dim"); });
       setTimeout(() => {
         lock = false;
-        reise.antworten[cid] = note.dataset.s;
+        reise.antworten[cid] = o.dataset.s;
         if (!reise.reihenfolge.includes(cid)) reise.reihenfolge.push(cid);
         weiter();
-      }, 430);
+      }, 480);
     });
 
     v.querySelector("#zurueck").addEventListener("click", () => {
@@ -384,7 +374,7 @@ const UI = (function () {
       });
       wrap.querySelector("#rneu").addEventListener("click", () => {
         resetReise();
-        const rc = board.querySelector("#recap"); rc.innerHTML = ""; delete rc.dataset.fill;
+        const rc = board.querySelector("#recapSlot"); if (rc) { rc.innerHTML = ""; delete rc.dataset.fill; }
         wrap.innerHTML = ""; syncBoard(0); camera(0);
       });
       wrap.querySelector("#rexperte").addEventListener("click", () => { state.choices = Object.assign({}, reise.antworten); save(); location.hash = "#/filter"; render(); });

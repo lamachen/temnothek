@@ -291,97 +291,71 @@ details.panel > div { padding:6px 14px 14px; }
   .board { transition:none !important; }
   #wbpath { transition:none !important; }
   .station .sk { animation:none !important; stroke-dashoffset:0 !important; }
-  .shead h3 { animation:none !important; clip-path:none !important; }
-  .shead p { animation:none !important; opacity:1 !important; }
-  .wbst.live .note { animation:none !important; opacity:1 !important; transform:rotate(var(--rot,0deg)) !important; }
-  .note.circled::after { animation:none !important; opacity:.9 !important; transform:rotate(-2deg) !important; }
+  .tstation.live .opt { animation:none !important; opacity:1 !important; transform:none !important; }
+  .opt.chosen .ringc { animation:none !important; opacity:.95 !important; transform:none !important; }
+  .fant,.antenna,.walkpair,.scurry,.stingflash,.sweepx,.cloud { animation:none !important; }
+  #trail { transition:none !important; }
   .mkdot { animation:none !important; }
 }
 
 /* =========================================================================
-   v3.2 – WHITEBOARD: die Reise spielt AUF der Tafel
-   Weisse Flaeche (echte Whiteboard-Optik in beiden Themes), Marker-Linie
-   zeichnet sich vor, Kamera fliegt hinterher; Antworten sind angeheftete
-   Karten + Polaroids auf der Tafel, Klick = Marker-Kreis.
+   v3.3 – SZENEN-WELT: durchillustrierte Landschaft mit Parallax-Kameraflug
+   Ferne (Himmel/Wald), Mitte (Baeume/Buesche) und Vordergrund (Boden,
+   Tableaus) reisen mit unterschiedlichem Tempo => echter Kameraflug.
+   Antworten sind Akteure/Objekte IN den Szenen; Echtfotos als Foto-Abzuege.
    ========================================================================= */
-:root, [data-theme="dark"], [data-theme="light"] {
-  --wbpaper:#fbfaf6; --wbink:#2b2833; --wbpath:#2f6fb2; --wbmut:#7c7668; }
-.kamera.wb { position:relative; overflow:hidden; height:clamp(360px,56vh,620px); margin:10px 0 14px;
-  border-radius:16px;
-  background:radial-gradient(120% 90% at 50% -20%, #ffffff 0%, var(--wbpaper) 55%, #efede6 100%);
-  box-shadow:inset 0 0 0 2px #cfcdd2, inset 0 0 60px rgb(0 0 0 / .06), 0 10px 30px rgb(0 0 0 / .28); }
-.kamera.wb::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:4;
-  background:linear-gradient(115deg, transparent 42%, rgb(255 255 255 / .55) 50%, transparent 58%);
-  mix-blend-mode:soft-light; }
-.kamera .board { position:absolute; top:0; left:0; transform-origin:0 0; color:var(--wbink);
-  transition:transform 1.05s cubic-bezier(.35,.75,.25,1); will-change:transform; }
-#boardsvg { position:absolute; inset:0; }
-.wbguide { stroke:var(--wbpath); opacity:.18; stroke-width:3; stroke-dasharray:1 12; stroke-linecap:round; }
-#wbpath { stroke:var(--wbpath); stroke-width:6; stroke-linecap:round; stroke-dasharray:100; stroke-dashoffset:100;
+.kamera.pan { position:relative; overflow:hidden; height:clamp(380px,60vh,660px); margin:10px 0 14px;
+  border-radius:18px; background:linear-gradient(#f8eed6, #efd9ac 45%);
+  box-shadow:inset 0 0 0 3px #2c2620, inset 0 0 90px rgb(30 18 6 / .28), 0 14px 40px rgb(0 0 0 / .35); }
+.kamera.pan::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:6;
+  background:radial-gradient(120% 90% at 50% 45%, transparent 60%, rgb(30 18 6 / .30) 100%); }
+.plyr, .kamera .board { position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform;
+  transition:transform 1.05s cubic-bezier(.35,.75,.25,1); }
+.plyr svg, .board > svg { display:block; }
+.board > svg.groundsvg, .board > svg.trailsvg { position:absolute; inset:0; }
+#trailguide { stroke:#6b4f33; opacity:.14; stroke-width:3; stroke-dasharray:4 10; stroke-linecap:round; }
+#trail { stroke:#6b4f33; opacity:.55; stroke-width:7; stroke-linecap:round;
+  stroke-dasharray:0.1 17; stroke-dashoffset:100;
   transition:stroke-dashoffset 1.15s cubic-bezier(.35,.75,.25,1); }
-.station .sk { stroke-dasharray:340; stroke-dashoffset:340; }
-.station.live .sk { animation:skdraw .85s ease forwards; animation-delay:var(--d,0s); }
-@keyframes skdraw { to { stroke-dashoffset:0; } }
-.station .snr circle { fill:var(--wbpath); }
-.station .snr text { fill:#fff; font:700 17px ui-monospace,monospace; text-anchor:middle; }
-.station .sdone, .station .sskip { opacity:0; transition:opacity .3s .35s; }
-.station.done .sdone { opacity:1; }
-.station.skip .sskip { opacity:1; }
-.sdone circle { fill:var(--ok); }
-.sdone path { stroke:#fff; stroke-width:3.4; fill:none; stroke-linecap:round; stroke-linejoin:round; }
-.sskip circle { fill:#b9b2a6; }
-.sskip text { fill:#fff; font-size:13px; text-anchor:middle; }
-/* Station: Marker-Handschrift-Frage + angeheftete Antwortkarten */
-.wbst { position:absolute; width:450px; transform:translate(-50%,-50%); text-align:center; }
-.wbst:not(.live) .shead, .wbst:not(.live) .notes, .wbst:not(.live) .recap { visibility:hidden; }
-.shead h3 { margin:0 0 2px; color:var(--wbink);
-  font:700 23px/1.25 "Segoe Print","Bradley Hand","Comic Sans MS",cursive;
-  clip-path:inset(0 100% 0 0); }
-.wbst.live .shead h3 { animation:writein .8s .15s cubic-bezier(.3,.7,.3,1) forwards; }
-@keyframes writein { to { clip-path:inset(0 -2% 0 0); } }
-.shead p { margin:2px 0 10px; font-size:.8rem; color:var(--wbmut); opacity:0; }
-.wbst.live .shead p { animation:slabin2 .5s .7s ease forwards; }
-@keyframes slabin2 { to { opacity:1; } }
-.notes { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
-.note { position:relative; display:flex; flex-direction:column; align-items:center; gap:2px;
-  padding:10px 8px 8px; border:0; cursor:pointer; color:var(--wbink);
-  background:#fff; border-radius:6px;
-  box-shadow:0 2px 0 rgb(0 0 0 / .08), 0 8px 18px rgb(40 36 20 / .14);
-  transform:rotate(var(--rot,0deg)) scale(.55); opacity:0;
+.tstation { position:absolute; transform:translate(-50%,0); }
+.tstation:not(.live) { visibility:hidden; }
+.tstation svg .opt { opacity:0; cursor:pointer; transform-box:fill-box; transform-origin:50% 90%;
   transition:opacity .3s, transform .3s, filter .3s; }
-.note::before { content:""; position:absolute; top:-9px; left:50%; width:52px; height:16px;
-  transform:translateX(-50%) rotate(-2deg);
-  background:rgb(232 176 75 / .5); box-shadow:0 1px 2px rgb(0 0 0 / .12); }
-.wbst.live .note { animation:notein .5s var(--d,.8s) cubic-bezier(.34,1.45,.64,1) forwards; }
-@keyframes notein { to { transform:rotate(var(--rot,0deg)) scale(1); opacity:1; } }
-.note:hover { transform:rotate(0deg) scale(1.04); opacity:1; }
-.note .vscene { width:100%; height:78px; }
-.ntitel { font-weight:600; font-size:.82rem; }
-.nfach { font-size:.62rem; color:var(--wbmut); }
-.note.weg { opacity:.28; filter:grayscale(.7); transform:rotate(var(--rot,0deg)) scale(.94); pointer-events:none; }
-.note.circled { opacity:1; filter:none; transform:rotate(0deg) scale(1.03); }
-.note.circled::after { content:""; position:absolute; inset:-7px -5px; pointer-events:none;
-  border:3.5px solid #d23c3c; border-radius:48% 52% 46% 54% / 52% 46% 54% 48%;
-  transform:rotate(-2deg) scale(.7); opacity:0;
-  animation:circstamp .45s .05s cubic-bezier(.34,1.5,.64,1) forwards; }
-@keyframes circstamp { to { transform:rotate(-2deg) scale(1); opacity:.9; } }
-/* Polaroid = Echtfoto-Beleg, an die Karte gepinnt (Klick = Provenanz) */
-.pol { position:absolute; top:-16px; right:-12px; width:58px; padding:4px 4px 12px; background:#fff;
-  box-shadow:0 4px 10px rgb(0 0 0 / .22); transform:rotate(var(--pr,-4deg)); cursor:zoom-in; z-index:2; }
-.pol img { display:block; width:50px; height:50px; object-fit:cover; }
-.pol b { position:absolute; right:2px; bottom:0; font-size:.6rem; }
-.pol:hover { transform:rotate(0deg) scale(1.12); }
-/* Ziel: Routen-Recap als Mini-Map */
-.wbst.ziel { width:520px; }
-.recap svg { width:100%; height:96px; }
-.recapchips { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:8px; }
-.recapchips .chip { background:#fff; color:var(--wbink); box-shadow:0 2px 6px rgb(0 0 0 / .12); }
-/* HUD + Werkzeuge auf der weissen Tafel */
-.kamera-hud { position:absolute; left:12px; top:10px; z-index:5; font-size:.78rem; color:var(--wbink);
-  background:rgb(255 255 255 / .85); padding:5px 12px; border-radius:999px;
-  box-shadow:inset 0 0 0 1px rgb(43 40 51 / .18), 0 2px 8px rgb(0 0 0 / .12); backdrop-filter:blur(4px); }
-.wb-tools { position:absolute; right:12px; bottom:10px; z-index:5; display:flex; gap:6px; }
-.wb-tools .btn { background:rgb(255 255 255 / .92); color:var(--wbink); border-color:rgb(43 40 51 / .25); }
+.tstation.live svg .opt { animation:optin .6s var(--d,.4s) cubic-bezier(.34,1.45,.64,1) forwards; }
+@keyframes optin { from { opacity:0; transform:translateY(30px) scale(.86); } to { opacity:1; transform:none; } }
+.tstation.live svg .opt:hover { transform:translateY(-6px) scale(1.02); opacity:1; }
+.tstation svg .opt.dim { opacity:.32; filter:saturate(.45) brightness(.96); pointer-events:none; }
+.tstation svg .opt.chosen { opacity:1; filter:drop-shadow(0 4px 10px rgb(194 65 12 / .35)); }
+.ringc { stroke:#c2410c; stroke-width:5; stroke-dasharray:10 7; stroke-linecap:round;
+  opacity:0; transform-box:fill-box; transform-origin:center; }
+.opt.chosen .ringc { animation:ringstamp .5s .05s cubic-bezier(.34,1.5,.64,1) forwards; }
+@keyframes ringstamp { from { opacity:0; transform:scale(.72) rotate(-5deg); } to { opacity:.95; transform:scale(1) rotate(0deg); } }
+.pol2 { transition:transform .25s; transform-box:fill-box; transform-origin:center; }
+.pol2:hover { transform:scale(1.08) rotate(0deg); }
+/* Idle-Leben in den Szenen */
+.kamera svg g { transform-box:fill-box; }
+.fant { animation:bob 3.4s ease-in-out infinite; }
+@keyframes bob { 50% { transform:translateY(-2.5px); } }
+.antenna { transform-origin:10% 90%; animation:sway 2.6s ease-in-out infinite; }
+@keyframes sway { 50% { transform:rotate(7deg); } }
+.walkpair { animation:steppair 1.15s ease-in-out infinite; }
+@keyframes steppair { 50% { transform:translateX(7px); } }
+.scurry { animation:scurry 2.3s ease-in-out infinite; }
+@keyframes scurry { 0%,100% { transform:translate(0,0); } 50% { transform:translate(16px,-3px); } }
+.stingflash { animation:flash 1.5s infinite; }
+@keyframes flash { 0%,55% { opacity:0; } 68% { opacity:1; } 100% { opacity:0; } }
+.sweepx { animation:sweepmove 2.9s ease-in-out infinite; }
+@keyframes sweepmove { 0%,100% { transform:translateX(-16px); opacity:.12; } 50% { transform:translateX(18px); opacity:.6; } }
+.cloud { animation:clouddrift var(--cd,30s) linear infinite alternate; }
+@keyframes clouddrift { to { transform:translateX(70px); } }
+.curlant { animation:curlpulse 2.6s ease-in-out infinite; }
+@keyframes curlpulse { 50% { transform:rotate(-4deg) scale(.98); } }
+/* HUD + Werkzeuge ueber der Landschaft */
+.kamera-hud { position:absolute; left:12px; top:10px; z-index:7; font-size:.78rem; color:#3a2c1c;
+  background:rgb(255 248 232 / .88); padding:5px 12px; border-radius:999px;
+  box-shadow:inset 0 0 0 1px rgb(58 44 28 / .22), 0 2px 8px rgb(0 0 0 / .18); backdrop-filter:blur(4px); }
+.wb-tools { position:absolute; right:12px; bottom:10px; z-index:7; display:flex; gap:6px; }
+.wb-tools .btn { background:rgb(255 248 232 / .92); color:#3a2c1c; border-color:rgb(58 44 28 / .3); }
 /* pulsierende "schau hier"-Punkte auf Belegfotos (Duell/Dossier) */
 .mklay { position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .35s; z-index:3; }
 .mk-an .mklay { opacity:1; }

@@ -297,13 +297,13 @@ const Visuals = (function () {
 
   function boardSVG(liste) {
     const STEP = 460, W = 260 + liste.length * STEP + 260, H = 640;
-    const pts = [{ x: 40, y: 360 }];
+    const pts = [{ x: 40, y: 400 }];
     const st = liste.map((s, i) => {
-      const p = { x: 260 + i * STEP, y: 320 + Math.sin(i * 1.05) * 95 };
+      const p = { x: 260 + i * STEP, y: 360 + Math.sin(i * 1.05) * 45 };
       pts.push(p);
       return Object.assign({ p, i }, s);
     });
-    const zielP = { x: 260 + liste.length * STEP, y: 320 + Math.sin(liste.length * 1.05) * 95 };
+    const zielP = { x: 260 + liste.length * STEP, y: 360 + Math.sin(liste.length * 1.05) * 45 };
     pts.push(zielP);
     const stations = st.concat([{ cid: "ziel", nr: "", label: "Ziel", p: zielP, i: liste.length }]);
     const inner = stations.map(s => {
