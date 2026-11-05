@@ -1,84 +1,41 @@
-# 🐜 TEMNOTHEK
+# 🐜 TEMNOTHEK v4 – FOKUS
 
-Interaktive, visuelle Bestimmung von **Temnothorax**-Arten und ihren Lookalikes
-(*Leptothorax*, *Formicoxenus*, *Harpagoxenus*, *Stenamma*, kleine *Myrmica*) –
-Fokus Deutschland + Nachbarraum.
+Reine Foto-Bestimmungsapp für **Temnothorax** und Lookalikes (*Leptothorax*, *Formicoxenus*,
+*Harpagoxenus*, *Stenamma*, kleine *Myrmica*) – Deutschland + Nachbarraum.
 
-**Kein Bestimmungsbuch, sondern ein Werkzeug:**
-- 🧭 **Visuelle Reise** (Start-Ansicht) – die Bestimmung spielt AUF einer weißen Whiteboard-Tafel:
-  eine Marker-Linie zeichnet sich geschwungen von Station zu Station vor, die **Kamera fliegt hinterher**
-  und zoomt je Detailgrad heran (Detail-Skizzen liegen proportional klein auf der Tafel, der Zoom gleicht aus).
-  Fragen schreiben sich in Marker-Handschrift ein, Antworten sind **angeheftete Karten** (animierte Skizze +
-  Alltagsvergleich) mit **Echtfoto-Polaroids** (🛡 = Provenanz) direkt daran; ein Tipp = Marker-Kreis um die
-  Karte, dann fliegt die Kamera weiter. Am Ziel: Routen-Recap als Mini-Map + Stimmigkeits-Ring.
-- 🖼️ **Leitansicht Profil** – alle Arten-Karten und Duelle starten in derselben Vergleichs-Perspektive;
-  Zweitansichten (Kopf/Dorsal) sitzen bewusst in Duell-Umschalter, Dossier-Galerie und Merkmal-Punkten (🎯).
-- 🎬 **Verhalten bestimmt mit** – Tandemlaufen, Einrollen, Stich-Drohen, Gast bei Waldameisen, Brutraub als eigene Szenen.
-- 📷 **Foto-Check** – eigenes Makro per Drag&Drop, synchron zoom-/pannbar neben dem Belegfoto **derselben Ansicht**.
-- 🌿/🔬 **Feld- & Labor-Modus** – einfache Sprache + Feld-Tipps vs. Messwerte/Tabellen (oben rechts umschaltbar).
-- 🎯 **Lebend-Filter** – Merkmale antippen, Kandidatenliste schrumpft live, jede Karte begründet („Warum?“).
-- 🛡️ **Verifizierte Belegfotos** – Museumsbelege (CASENT-Nummern, CC-BY 4.0) mit Herkunftssiegel; kein Community-Ratebild.
-- 📐 **Verhältnistreue SVG-Zeichnungen** – parametrisch aus publizierten Winkeln/Ratios erzeugt, alle Arten gleich orientiert.
-- ⚔️ **Verwechslungs-Duell** – synchron zoom-/pannbarer A/B-Vergleich (mit Touch-Zoom-Buttons) + **Ghost-Overlay** der Zeichnungen mit Opazitätsregler.
-- 🧪 **Morph-Lab** – Slider für Dornenwinkel/-länge, Knotenwinkel/-höhe morphen die Zeichnung live und zeigen, welche Arten im Formfenster liegen.
-- 🔬 **Mess-Bank** – eigenes Foto kalibrieren, Strecken in µm messen, Ratios gegen publizierte Spannen prüfen, D4-Diskriminanz.
-- 🚦 **Ehrlichkeits-Ampel** – grün/gelb/rot inkl. „per Foto NICHT trennbar“ bei kryptischen Paaren.
-- 📓 **Fund-Journal** – lokal (IndexedDB), mit GPS, Foto, Export.
-- 📴 **Offline-fähig** – statische Web-App, Service Worker, keine Serverkosten, keine Konten.
+**Prinzip:** Bestimmen über **verifizierte Belegfotos**, optimal präsentiert. Kein Fragebogen,
+keine Szenen, kein Beiwerk.
+
+- 📷 **Belegfoto-Wand** (Start): jede Art als Karte mit Museums-Belegfoto in **Leitansicht Profil**
+  (alle gleich orientiert = direkt vergleichbar), DE-Status Badge, 🛡️ = Provenanz-Popover
+  (CASENT-Nummer / Revisionstafel, Quelle, Lizenz CC-BY 4.0, Prüfvermerk).
+- 🎯 **Merkmals-Punkte**: pulsierende Marker auf den Fotos zeigen die diagnostischen Regionen
+  (Kopf-Skulptur, Propodealdornen, Knoten …) – auf Wand, Dossier, Duell und in der Lightbox.
+- 🔍 **Lightbox**: jedes Dossier-Foto groß, zoom-/panbar (Rad, Buttons, Ziehen, Doppelklick-Reset),
+  Marker an/aus, Belegkette direkt darunter.
+- ⚔️ **Duell**: verwechslungsgefährliche Paare mit **synchronem Zoom/Pan** auf beiden Belegfotos,
+  Ansichten-Umschalter (Profil/Kopf/Dorsal), Ehrlichkeits-Ampel („per Foto NICHT trennbar"),
+  Form-Overlay der verhältnistreuen Zeichnungen mit Opazitätsregler.
+- 🔍 **Foto-Check**: eigenes Makro per Drag&Drop gegen das Belegfoto **derselben Ansicht**,
+  synchron zoombar; bleibt nur in der Sitzung, verlässt das Gerät nicht.
+- 📖 **Dossier**: Belegfotos aller Ansichten (Profil zuerst), verhältnistreue parametrische
+  Zeichnung (publizierte Winkel/Ratios, CS-normiert), Steckbrief, Biologie, Jahresaktivität,
+  Verwechslungs-Links; im 🔬 Labor-Modus zusätzlich publizierte Morphometrie-Spannen.
+- 🔬 **Mess-Bank**: Foto kalibrieren, Strecken in µm messen, Ratios gegen publizierte Spannen,
+  D4-Diskriminanz – für Paare, die per Foto nicht trennbar sind.
+- 🌿/🔬 **Feld-/Labor-Modus**: schaltet Sprache & Tiefe der Zusatzinformationen.
+- 📴 **Offline & kostenlos**: statische Web-App + Service Worker, keine Server, keine Konten.
+
+## Bild-Sicherheit
+
+Kein Community-Ratebild: Jedes eingebettete Foto hängt an einem physischen Museumsspecimen
+(AntWeb / California Academy of Sciences, CASENT-Nummer) oder an einer Bildtafel einer
+peer-reviewten Revision, ist CC-BY 4.0 lizenziert und wurde zusätzlich visuell gegengeprüft.
+Details: [QUELLEN.md](QUELLEN.md).
 
 ## Lokal starten
 
-Variante A (empfohlen, aktiviert Offline-Caching/PWA):
+Ordner downloaden und `index.html` öffnen – oder irgendein Statik-Server, z. B.:
+`python3 -m http.server 8080` im Projektordner. Live: https://lamachen.github.io/temnothek/
 
-```bash
-cd temnothek
-python3 -m http.server 8080        # oder: npx serve .
-# dann im Browser: http://localhost:8080
-```
-
-Variante B: `index.html` direkt doppelklicken – funktioniert ebenfalls
-(dann ohne Service-Worker/Offline-Cache).
-
-Als App installieren: im Browser „Installieren“ / „Zum Startbildschirm hinzufügen“.
-
-## Struktur
-
-```
-temnothek/
-├── index.html            Shell
-├── styles.css            Theme (dunkel/hell), Layout
-├── js/data.js            Arten-DB, Merkmale, Duelle, Glossar, Quellen
-├── js/morph.js           SVG-Engine (Profil, Kopfdorsal, Anatomie, Range-Plots)
-├── js/engine.js          Scoring, nächste Frage, Ampel, Morphometrie
-├── js/ui.js              Router & Views (Bestimmen, Arten, Duell, Mess-Bank, Journal, Wissen)
-├── assets/img/           22 verifizierte Belegfotos (~208 KB)
-├── sw.js, manifest.webmanifest   PWA/Offline
-├── QUELLEN.md            Provenienz- & Verifikationslog aller Bilder/Fakten
-└── README.md
-```
-
-## Daten erweitern
-
-Neue Art → Eintrag in `TAXA` (js/data.js): `chars`-Gewichte (1/0.4/0), `region`,
-`habitat`, `morphParams` (Winkel & Ratios aus der Literatur!), `bilder` mit
-`specimen`+`quelle`+`url`. Neues Duell → `DUELLE`. Neuer Ratio-Bereich →
-`MORPH_RANGES` (nur publizierte Spannen aufnehmen, Quelle angeben).
-
-## Lizenzhinweis
-
-Privates Projekt. Belegfotos: © California Academy of Sciences / AntWeb, CC-BY 4.0,
-via AntWiki & Wikimedia Commons. Eigener Code & Zeichnungen: frei für private Nutzung.
-
-## 🌍 GitHub Pages (Hosting)
-
-Dieses Repo deployt automatisch per **GitHub Actions** auf GitHub Pages:
-Workflow `.github/workflows/pages.yml` baut bei jedem Push auf `main` ein `_site/`-Artefakt
-(nur die statischen App-Dateien) und veröffentlicht es unter
-`https://<username>.github.io/temnothek/`.
-
-Setup-Schritte (einmalig, bereits erledigt falls du dieses Repo von lamachen/temnothek hast):
-1. Repo **public** anlegen (Pages + freie Actions-Minuten).
-2. Unter *Settings → Pages* die Quelle auf **GitHub Actions** setzen (passiert automatisch per API/Workflow).
-3. Push auf `main` → Action läuft → Seite live. Status: *Actions*-Tab.
-
-Lokal bleibt die App trotzdem voll nutzbar (`python3 -m http.server`), inkl. Offline-Cache via Service Worker.
+Privates, nicht-kommerzielles Projekt.

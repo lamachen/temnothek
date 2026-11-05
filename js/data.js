@@ -7,7 +7,7 @@
 
 const APP_META = {
   name: "TEMNOTHEK",
-  version: "3.1.0",
+  version: "4.0.0",
   stand: "2026-11",
   lizenzHinweis: "Privates, nicht-kommerzielles Projekt. Belegfotos: AntWeb / California Academy of Sciences via AntWiki & Wikimedia Commons, CC-BY 4.0."
 };
